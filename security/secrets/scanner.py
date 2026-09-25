@@ -24,6 +24,16 @@ class ScannerError(Exception):
     pass
 
 
+# Path to the Gitleaks config that extends the default rule set and
+# allowlists PipelineGuard's own intentional test fixtures
+# (security/secrets/test/ and security/secrets/tests/). Resolved
+# relative to this file, not the caller's current directory, so the
+# exclusion applies no matter where scanner.py is run from.
+GITLEAKS_CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), ".gitleaks.toml"
+)
+
+
 def run_gitleaks(target="."):
     """
     Run Gitleaks against `target` and return the list of findings
@@ -39,6 +49,8 @@ def run_gitleaks(target="."):
         "gitleaks",
         "dir",
         target,
+        "--config",
+        GITLEAKS_CONFIG_PATH,
         "--report-format",
         "json",
         "--report-path",
