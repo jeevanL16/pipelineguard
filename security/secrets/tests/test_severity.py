@@ -18,6 +18,18 @@ def test_github_pat_is_high():
     assert get_severity("github-pat") == HIGH
 
 
+def test_generic_api_key_is_high():
+    # generic-api-key is the catch-all rule that also matches plain
+    # "password = ..." / "api_key = ..." style lines, so it is the
+    # rule our Password/Credential category relies on.
+    assert get_severity("generic-api-key") == HIGH
+
+
+def test_known_password_rules_are_high():
+    for rule_id in ("hashicorp-tf-password", "nuget-config-password", "planetscale-password"):
+        assert get_severity(rule_id) == HIGH
+
+
 def test_unknown_rule_falls_back_to_default_severity():
     assert get_severity("some-rule-not-in-policy") == DEFAULT_SEVERITY
 

@@ -55,6 +55,54 @@ def test_dummy_secret_is_detected(tmp_path):
     assert findings[0]["RuleID"] == "github-pat"
 
 
+def test_private_key_is_classified_critical(tmp_path):
+    target = copy_sample("private_key.txt", tmp_path)
+
+    _, events = scanner.scan(str(target))
+
+    assert len(events) >= 1
+    assert all(event["severity"] == "CRITICAL" for event in events)
+
+
+def test_aws_credential_is_classified_high(tmp_path):
+    target = copy_sample("aws_credentials.txt", tmp_path)
+
+    _, events = scanner.scan(str(target))
+
+    assert len(events) >= 1
+    assert all(event["severity"] == "HIGH" for event in events)
+
+
+def test_github_token_is_classified_high(tmp_path):
+    target = copy_sample("github_token.txt", tmp_path)
+
+    _, events = scanner.scan(str(target))
+
+    assert len(events) == 1
+    assert events[0]["severity"] == "HIGH"
+
+
+def test_generic_api_key_is_classified_high(tmp_path):
+    target = copy_sample("generic_api_key.txt", tmp_path)
+
+    _, events = scanner.scan(str(target))
+
+    assert len(events) >= 1
+    assert all(event["severity"] == "HIGH" for event in events)
+
+
+def test_password_credential_is_classified_high(tmp_path):
+    target = copy_sample("password_credential.txt", tmp_path)
+
+    findings, events = scanner.scan(str(target))
+
+    # Both lines in password_credential.txt are expected to be
+    # detected (generic-api-key) and classified HIGH.
+    assert len(findings) >= 1
+    assert len(events) == len(findings)
+    assert all(event["severity"] == "HIGH" for event in events)
+
+
 def test_finding_is_masked_in_output(tmp_path, capsys):
     target = copy_sample("private_key.txt", tmp_path)
 

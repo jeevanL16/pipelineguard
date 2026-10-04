@@ -15,6 +15,19 @@ today. mask_secret() exists so that if that ever changes (for
 example, a future debug mode), there is a single, tested function
 that must be used, instead of ad-hoc string slicing scattered
 around the codebase.
+
+Design choice (Week 4): partial masking (keep a few characters at
+each end) instead of a flat "[REDACTED]" placeholder. Reasoning:
+  - A developer who sees an alert can still recognise *which*
+    credential was flagged (e.g. to match it against a known key in
+    their own notes) without the output containing anything close to
+    enough of the value to reuse it.
+  - A flat "[REDACTED]" for every finding gives no way to tell two
+    different findings apart in a log, which makes debugging harder.
+  - Short secrets are always fully masked (see FULLY_MASKED below),
+    so this does not weaken protection for short values - the
+    trade-off only applies to values long enough that a few visible
+    characters at each end are not meaningful on their own.
 """
 
 # How many characters to keep visible at the start and end of a
@@ -28,12 +41,18 @@ VISIBLE_SUFFIX = 3
 FULLY_MASKED = "****"
 
 
-def mask_secret(secret: str) -> str:
+def mask_secret(secret) -> str:
     """
     Return a masked version of a secret string.
 
     Rules:
-    - Empty or missing value -> return an empty string.
+    - Empty or missing value (None, "", etc.) -> return an empty
+      string. This is checked with `not secret`, so it also safely
+      covers falsy values rather than raising an error.
+    - A non-string value is converted with str() first, so a caller
+      passing something unexpected (an int, for example) cannot
+      crash the scanner - it is still masked rather than printed
+      as-is.
     - Very short secrets (<= VISIBLE_PREFIX + VISIBLE_SUFFIX) are
       fully masked, since showing any real characters of a short
       secret could reveal most of it.
@@ -45,6 +64,7 @@ def mask_secret(secret: str) -> str:
     if not secret:
         return ""
 
+    secret = str(secret)
     length = len(secret)
     min_length_to_partially_mask = VISIBLE_PREFIX + VISIBLE_SUFFIX
 

@@ -37,3 +37,15 @@ def test_masked_secret_never_contains_the_real_middle_section():
 def test_masked_output_is_same_length_as_input():
     secret = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYzX4mQ9pL3"
     assert len(mask_secret(secret)) == len(secret)
+
+
+def test_non_string_input_does_not_crash_and_is_masked():
+    # A caller should never be able to crash the scanner or get the
+    # raw value back just by passing something unexpected.
+    assert mask_secret(123456789012) != "123456789012"
+    assert "*" in mask_secret(123456789012)
+
+
+def test_zero_is_treated_as_empty():
+    # 0 is falsy in Python, consistent with how None/"" are treated.
+    assert mask_secret(0) == ""

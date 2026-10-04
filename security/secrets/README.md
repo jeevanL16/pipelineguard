@@ -208,9 +208,84 @@ event construction, and end-to-end scanner behavior (clean scan,
 single finding, multiple findings, masking in output, and exit
 codes) against the real Gitleaks binary and the dummy sample files.
 
-## Out of scope for Week 3
+## Week 4 updates
 
-The following are deliberately **not** part of this module yet:
-artifact hashing/signing, SBOM, provenance, GitHub Actions workflow
-integration, backend/database integration, dashboard, Kubernetes,
-AWS deployment, ELK, HashiCorp Vault, Jenkins.
+Week 4 built on the Week 3 scanner without restructuring it. Three
+things changed:
+
+**1. Secret classification**
+
+The severity policy in `severity.py` now also recognizes a
+Password/Credential category, mapped to HIGH:
+
+| Gitleaks rule | PipelineGuard severity |
+|---|---|
+| `private-key` | CRITICAL |
+| `aws-access-token` | HIGH |
+| `github-pat` / `github-fine-grained-pat` | HIGH |
+| `stripe-access-token` | HIGH |
+| `hashicorp-tf-password` / `nuget-config-password` / `planetscale-password` | HIGH |
+| `generic-api-key` | HIGH |
+| any other rule | MEDIUM (default) |
+
+In practice, most plain `password = ...` or `api_key = ...` style
+lines are caught by `generic-api-key`, not a password-specific rule.
+While testing this, the original `password_credential.txt` sample
+was found to **not** be detected at all: Gitleaks' `generic-api-key`
+rule only captures values made of letters, digits, `.`, `=`, and
+`-`, and the original fake passwords used `#`, `$`, `!`, which broke
+the match. The sample was fixed to use a value in that character
+set, and detection was re-verified. This is a real limitation of the
+rule, not a bug in PipelineGuard.
+
+**2. Secret masking**
+
+`masking.py` keeps a partial-masking approach (a few characters
+visible at each end, full masking for short values) rather than a
+flat `[REDACTED]` placeholder, so that two different findings in the
+same log remain distinguishable from each other without exposing
+enough of either value to reuse it. It was also hardened so a
+non-string value passed in cannot crash the scanner.
+
+**3. Safe security events**
+
+`events.py` now builds the team's agreed common event schema:
+
+```json
+{
+  "event_id": "3f462065-20d2-4b5f-a743-47264e32d417",
+  "event_type": "secret_exposure",
+  "source": "gitleaks",
+  "severity": "HIGH",
+  "repository": "pipelineguard",
+  "branch": "feature/secrets-artifact",
+  "file": "security/secrets/test/samples/generic_api_key.txt",
+  "line": 1,
+  "rule": "generic-api-key",
+  "description": "Potential secret detected in source code (rule: generic-api-key, severity: HIGH)",
+  "action": "BLOCK",
+  "status": "OPEN",
+  "metadata": {
+    "module": "secrets-security",
+    "detector": "gitleaks"
+  }
+}
+```
+
+`event_id` is a fresh UUID per finding, and `branch` is read from
+the current git branch (`git rev-parse --abbrev-ref HEAD`), falling
+back to `"unknown"` if that fails for any reason. As before, there
+is no field containing the raw secret value, and this is checked by
+a test.
+
+**Testing:** the secrets module now has 33 passing pytest tests,
+covering masking, severity classification (including the new
+password/credential category), the event schema, multiple findings,
+and the PASS / BLOCK / scanner-error exit codes.
+
+## Out of scope for Week 4
+
+Artifact hashing/signing is planned for Week 5 and was not started
+here. Also still out of scope: SBOM, provenance, GitHub Actions
+workflow integration, backend/database integration, dashboard,
+Kubernetes, AWS deployment, ELK, HashiCorp Vault, Jenkins.

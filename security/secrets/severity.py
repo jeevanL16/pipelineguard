@@ -18,11 +18,27 @@ MEDIUM = "MEDIUM"
 # PipelineGuard Secret Severity Policy
 # Rule ID (as reported by Gitleaks) -> PipelineGuard severity.
 SEVERITY_POLICY = {
+    # Private keys
     "private-key": CRITICAL,
+    # Cloud credentials
     "aws-access-token": HIGH,
+    # Source control / VCS tokens
     "github-pat": HIGH,
     "github-fine-grained-pat": HIGH,
+    # Third-party service tokens
     "stripe-access-token": HIGH,
+    # Password / credential rules (Gitleaks ships a handful of
+    # service-specific "password" rules; the catch-all for a plain
+    # "password = ..." or "api_key = ..." line is generic-api-key
+    # below, which already fires on password-style assignments once
+    # the value looks sufficiently random).
+    "hashicorp-tf-password": HIGH,
+    "nuget-config-password": HIGH,
+    "planetscale-password": HIGH,
+    # Generic, keyword-based detection (access/auth/key/password/
+    # secret/token followed by a high-entropy value). This is the
+    # rule that catches most plain "password=..." and "api_key=..."
+    # style lines that don't match a specific service's format.
     "generic-api-key": HIGH,
 }
 
