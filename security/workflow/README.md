@@ -1,10 +1,10 @@
 # PipelineGuard — Workflow Security
 
-GitHub Actions workflow analyzer (Member 1). This phase is package layout and importable skeletons only.
+GitHub Actions workflow analyzer (Member 1).
 
 ## Layout
 
-- `parser.py` — YAML → models (not implemented yet)
+- `parser.py` — YAML → models (`yaml.SafeLoader` only; `on:` is kept as the string key `"on"`)
 - `analyzer.py` — run detectors (not implemented yet)
 - `detectors/` — injection, commands, permissions, network, modification (not implemented yet)
 - `rules.py` — rule IDs and severity/action policy
@@ -18,7 +18,7 @@ GitHub Actions workflow analyzer (Member 1). This phase is package layout and im
 From the repository root:
 
 ```bash
-pip install pytest
+pip install -r security/workflow/requirements.txt
 python -m pytest -v
 ```
 
