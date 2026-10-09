@@ -1,8 +1,9 @@
-"""Phase 2: skeletons must import. No analyzer behavior is tested yet."""
+"""Phase 2/4: all modules must import cleanly."""
 
 import security.workflow
 import security.workflow.analyzer
 import security.workflow.events
+import security.workflow.finding
 import security.workflow.models
 import security.workflow.parser
 import security.workflow.reporter
@@ -37,6 +38,7 @@ def test_core_modules_import():
     assert security.workflow.rules.__doc__
     assert security.workflow.events.__doc__
     assert security.workflow.reporter.__doc__
+    assert security.workflow.finding.__doc__
 
 
 def test_detector_modules_import():
