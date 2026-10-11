@@ -63,10 +63,10 @@
   - [x] Argument parsing (`scan <paths>`, `--format`, `--config`, `--fail-on`, `--output`, `--baseline`, `--repository`)
   - [x] Baseline matching and generation
   - [x] Tests in `tests/test_cli.py`
-- [ ] **Step 7: Public API (`api.py` & `__init__.py`)**
-  - [ ] Typed `analyze_path()`, `analyze_text()`, `to_events()`
-  - [ ] Re-export public surface in `security/workflow/__init__.py`
-  - [ ] Tests in `tests/test_api.py`
+- [x] **Step 7: Public API (`api.py` & `__init__.py`)**
+  - [x] Typed `analyze_path()`, `analyze_text()`, `to_events()`
+  - [x] Re-export public surface in `security/workflow/__init__.py`
+  - [x] Tests in `tests/test_api.py`
 - [ ] **Step 8: End-to-End & Quality Gate**
   - [ ] Tests in `tests/test_e2e.py`
   - [ ] All linters, types, tests, and coverage passing
