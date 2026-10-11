@@ -38,7 +38,7 @@ jobs:
 """
 
 
-def test_valid_workflow():
+def test_valid_workflow() -> None:
     result = parse_workflow_text(VALID_WORKFLOW, path=".github/workflows/ci.yml")
     assert result.ok
     workflow = result.workflow
@@ -67,7 +67,7 @@ def test_valid_workflow():
     assert job.steps[0].line is not None
 
 
-def test_empty_workflow():
+def test_empty_workflow() -> None:
     result = parse_workflow_text("", path="empty.yml")
     assert result.ok
     workflow = result.workflow
@@ -78,7 +78,7 @@ def test_empty_workflow():
     assert workflow.expressions == []
 
 
-def test_malformed_yaml():
+def test_malformed_yaml() -> None:
     result = parse_workflow_text("jobs:\n  build: [\n", path="bad.yml")
     assert not result.ok
     assert result.workflow is None
@@ -87,13 +87,13 @@ def test_malformed_yaml():
     assert "bad.yml" in result.error
 
 
-def test_malformed_yaml_does_not_raise():
+def test_malformed_yaml_does_not_raise() -> None:
     result = parse_workflow_text(": : :", path="broken.yml")
     assert not result.ok
     assert result.error is not None
 
 
-def test_missing_fields():
+def test_missing_fields() -> None:
     result = parse_workflow_text("jobs:\n  only-job:\n    steps:\n      - run: echo\n")
     assert result.ok
     workflow = result.workflow
@@ -109,7 +109,7 @@ def test_missing_fields():
     assert job.steps[0].uses is None
 
 
-def test_multiple_jobs():
+def test_multiple_jobs() -> None:
     text = """
 on: push
 jobs:
@@ -124,12 +124,14 @@ jobs:
 """
     result = parse_workflow_text(text)
     assert result.ok
-    assert [job.id for job in result.workflow.jobs] == ["first", "second"]
-    assert result.workflow.jobs[0].runs_on == "ubuntu-latest"
-    assert result.workflow.jobs[1].runs_on == "windows-latest"
+    workflow = result.workflow
+    assert workflow is not None
+    assert [job.id for job in workflow.jobs] == ["first", "second"]
+    assert workflow.jobs[0].runs_on == "ubuntu-latest"
+    assert workflow.jobs[1].runs_on == "windows-latest"
 
 
-def test_multiple_steps():
+def test_multiple_steps() -> None:
     text = """
 on: push
 jobs:
@@ -142,14 +144,16 @@ jobs:
 """
     result = parse_workflow_text(text)
     assert result.ok
-    steps = result.workflow.jobs[0].steps
+    workflow = result.workflow
+    assert workflow is not None
+    steps = workflow.jobs[0].steps
     assert len(steps) == 3
     assert steps[0].uses == "actions/checkout@v4"
     assert steps[1].run == "pip install -r requirements.txt"
     assert steps[2].run == "pytest"
 
 
-def test_multiline_run_commands():
+def test_multiline_run_commands() -> None:
     text = """
 on: push
 jobs:
@@ -163,14 +167,16 @@ jobs:
 """
     result = parse_workflow_text(text)
     assert result.ok
-    run = result.workflow.jobs[0].steps[0].run
+    workflow = result.workflow
+    assert workflow is not None
+    run = workflow.jobs[0].steps[0].run
     assert run is not None
     assert "echo line1" in run
     assert "echo line2" in run
     assert "\n" in run
 
 
-def test_permissions_blocks():
+def test_permissions_blocks() -> None:
     text = """
 on: push
 permissions: read-all
@@ -185,14 +191,16 @@ jobs:
 """
     result = parse_workflow_text(text)
     assert result.ok
-    assert result.workflow.permissions == "read-all"
-    assert result.workflow.jobs[0].permissions == {
+    workflow = result.workflow
+    assert workflow is not None
+    assert workflow.permissions == "read-all"
+    assert workflow.jobs[0].permissions == {
         "contents": "read",
         "pull-requests": "write",
     }
 
 
-def test_expressions_and_contexts():
+def test_expressions_and_contexts() -> None:
     text = """
 on: push
 jobs:
@@ -207,6 +215,7 @@ jobs:
     result = parse_workflow_text(text)
     assert result.ok
     workflow = result.workflow
+    assert workflow is not None
     contexts = {expr.context for expr in workflow.expressions}
     texts = {expr.text for expr in workflow.expressions}
     assert "github" in contexts
@@ -220,7 +229,7 @@ jobs:
     assert step_contexts == {"secrets", "env"}
 
 
-def test_on_key_not_coerced_to_boolean():
+def test_on_key_not_coerced_to_boolean() -> None:
     """GitHub Actions `on:` must stay the key 'on', not YAML 1.1 boolean True."""
     text = """
 on:
@@ -239,6 +248,7 @@ jobs:
     result = parse_workflow_text(text, path="triggers.yml")
     assert result.ok
     workflow = result.workflow
+    assert workflow is not None
     assert workflow.on == {"push": {"branches": ["main"]}}
     assert workflow.on is not True
     raw, _, _ = _safe_load_with_lines(text)
@@ -246,29 +256,31 @@ jobs:
     assert True not in raw
 
 
-def test_true_false_still_parse_as_booleans():
+def test_true_false_still_parse_as_booleans() -> None:
     raw, _, _ = _safe_load_with_lines("continue-on-error: true\n")
     assert raw["continue-on-error"] is True
     raw_false, _, _ = _safe_load_with_lines("continue-on-error: false\n")
     assert raw_false["continue-on-error"] is False
 
 
-def test_parse_workflow_records_file_path(tmp_path: Path):
+def test_parse_workflow_records_file_path(tmp_path: Path) -> None:
     path = tmp_path / "ci.yml"
     path.write_text(VALID_WORKFLOW, encoding="utf-8")
     result = parse_workflow(path)
     assert result.ok
+    assert result.workflow is not None
     assert result.workflow.path == str(path)
 
 
-def test_missing_file_returns_error(tmp_path: Path):
+def test_missing_file_returns_error(tmp_path: Path) -> None:
     result = parse_workflow(tmp_path / "missing.yml")
     assert not result.ok
     assert result.workflow is None
+    assert result.error is not None
     assert "not found" in result.error.lower() or "unreadable" in result.error.lower()
 
 
-def test_parser_does_not_use_unsafe_yaml_loaders():
+def test_parser_does_not_use_unsafe_yaml_loaders() -> None:
     source = Path("security/workflow/parser.py").read_text(encoding="utf-8")
     assert "unsafe_load" not in source
     assert "FullLoader" not in source

@@ -23,9 +23,9 @@
   - [x] `security/workflow/tests/test_detector_network.py`
   - [x] `security/workflow/tests/test_detector_modification.py`
   - [x] `security/workflow/tests/test_detector_supply_chain.py`
-- [ ] **Step 4: Fix Existing Tests for mypy --strict**
-  - [ ] `security/workflow/tests/test_parser.py`
-  - [ ] `security/workflow/tests/test_imports.py`
+- [x] **Step 4: Fix Existing Tests for mypy --strict**
+  - [x] `security/workflow/tests/test_parser.py`
+  - [x] `security/workflow/tests/test_imports.py`
 - [ ] **Step 5: Labs Fixtures**
   - [ ] `security/workflow/labs/vulnerable/` (realistic workflows triggering PG-WF-001..023)
   - [ ] `security/workflow/labs/vulnerable/expected.json`
