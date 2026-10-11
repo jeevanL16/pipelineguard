@@ -45,9 +45,9 @@
   - [x] Add `PG-WF-900` (parse error / limits exceeded) and `PG-WF-901` (detector error) to `rules.py`
   - [x] Implement `analyzer.py` (`AnalysisResult`, exception isolation, suppression parsing with mandatory reason, dedupe, safe path scanning)
   - [x] Tests in `tests/test_analyzer.py`
-- [ ] **Step 2: Configuration (`config.py`)**
-  - [ ] Implement strict `config.py` (overrides, allowlists, fail_on, excludes, defaults, exit code 3 on error)
-  - [ ] Tests in `tests/test_config.py`
+- [x] **Step 2: Configuration (`config.py`)**
+  - [x] Implement strict `config.py` (overrides, allowlists, fail_on, excludes, defaults, exit code 3 on error)
+  - [x] Tests in `tests/test_config.py`
 - [ ] **Step 3: Risk Scoring (`risk.py`)**
   - [ ] Implement pure deterministic risk scoring formula (0-100 score + grade A-F)
   - [ ] Tests in `tests/test_risk.py`
