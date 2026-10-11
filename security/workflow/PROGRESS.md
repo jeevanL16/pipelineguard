@@ -16,7 +16,7 @@
   - [x] `security/workflow/detectors/modification.py` (import sorting)
 - [x] **Step 2: Supply Chain Detector**
   - [x] `security/workflow/detectors/supply_chain.py` (PG-WF-019 unpinned actions, PG-WF-020 persist-credentials)
-- [ ] **Step 3: Detector Unit Tests**
+- [x] **Step 3: Detector Unit Tests**
   - [x] `security/workflow/tests/test_detector_injection.py`
   - [x] `security/workflow/tests/test_detector_permissions.py`
   - [x] `security/workflow/tests/test_detector_commands.py`
