@@ -97,7 +97,7 @@ def parse_workflow_text(text: str, path: str = "<string>") -> ParseResult:
     try:
         data, lines, key_lines = _safe_load_with_lines(text)
     except yaml.YAMLError as exc:
-        return ParseResult(workflow=None, error=_format_yaml_error(path, exc))
+        return ParseResult(workflow=None, error=_format_yaml_error(path, exc), raw_text=text, path=path)
 
     if data is None:
         return ParseResult(
@@ -112,12 +112,16 @@ def parse_workflow_text(text: str, path: str = "<string>") -> ParseResult:
                 line=None,
             ),
             error=None,
+            raw_text=text,
+            path=path,
         )
 
     if not isinstance(data, dict):
         return ParseResult(
             workflow=None,
             error=f"Malformed workflow YAML in {path}: root document must be a mapping",
+            raw_text=text,
+            path=path,
         )
 
     jobs_raw = data.get("jobs")
@@ -127,6 +131,8 @@ def parse_workflow_text(text: str, path: str = "<string>") -> ParseResult:
         return ParseResult(
             workflow=None,
             error=f"Malformed workflow YAML in {path}: 'jobs' must be a mapping",
+            raw_text=text,
+            path=path,
         )
     else:
         jobs = _parse_jobs(jobs_raw, key_lines.get(id(jobs_raw), {}), lines)
@@ -142,7 +148,7 @@ def parse_workflow_text(text: str, path: str = "<string>") -> ParseResult:
         expressions=expressions,
         line=lines.get(id(data)),
     )
-    return ParseResult(workflow=workflow, error=None)
+    return ParseResult(workflow=workflow, error=None, raw_text=text, path=path)
 
 
 def _safe_load_with_lines(

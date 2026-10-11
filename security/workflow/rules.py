@@ -548,6 +548,41 @@ _RULES: Final[list[Rule]] = [
         ),
         references=(),
     ),
+    # ------------------------------------------------------------------
+    # Reserved system rules
+    # ------------------------------------------------------------------
+    Rule(
+        id="PG-WF-900",
+        title="Workflow parse error or limits exceeded",
+        description=(
+            "The workflow file could not be parsed as valid YAML, violates structural "
+            "constraints, contains invalid character encodings, or exceeds maximum file size limits."
+        ),
+        severity=Severity.HIGH,
+        action=Action.BLOCK,
+        cwe="CWE-20",
+        remediation=(
+            "Fix the syntax error in the workflow YAML, convert file to valid UTF-8, "
+            "or reduce workflow complexity."
+        ),
+        references=(),
+    ),
+    Rule(
+        id="PG-WF-901",
+        title="Internal detector execution error",
+        description=(
+            "An unhandled internal exception occurred in a detector while scanning "
+            "the workflow. The finding records the faulting detector and exception type."
+        ),
+        severity=Severity.MEDIUM,
+        action=Action.WARN,
+        cwe="CWE-703",
+        remediation=(
+            "Review the workflow syntax near the reported step and report this internal error "
+            "with reproduction steps to the PipelineGuard team."
+        ),
+        references=(),
+    ),
 ]
 
 

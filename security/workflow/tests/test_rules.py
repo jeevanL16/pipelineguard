@@ -141,7 +141,7 @@ class TestRule:
 
 class TestRegistry:
     def test_registry_not_empty(self) -> None:
-        assert len(REGISTRY) > 0
+        assert len(REGISTRY) == 25
 
     def test_all_ids_unique(self) -> None:
         ids = list(REGISTRY.keys())
@@ -158,7 +158,7 @@ class TestRegistry:
             assert key == rule.id
 
     def test_known_rules_present(self) -> None:
-        for expected_id in ["PG-WF-001", "PG-WF-019", "PG-WF-020"]:
+        for expected_id in ["PG-WF-001", "PG-WF-019", "PG-WF-020", "PG-WF-900", "PG-WF-901"]:
             assert expected_id in REGISTRY, f"{expected_id} missing from registry"
 
     def test_all_rules_have_nonempty_fields(self) -> None:

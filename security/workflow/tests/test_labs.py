@@ -56,8 +56,8 @@ def test_vulnerable_fixtures_match_expected_rules() -> None:
 
         exercised_rules.update(actual_rule_ids)
 
-    # Every rule registered in REGISTRY must be tested by at least one vulnerable fixture
-    all_registered_rules = set(REGISTRY.keys())
+    # Every rule registered in REGISTRY (excluding reserved system rules PG-WF-9*) must be tested by at least one vulnerable fixture
+    all_registered_rules = {r for r in REGISTRY if not r.startswith("PG-WF-9")}
     missing_coverage = all_registered_rules - exercised_rules
     assert not missing_coverage, (
         f"The following registered rules have no vulnerable lab fixture coverage: {sorted(missing_coverage)}"

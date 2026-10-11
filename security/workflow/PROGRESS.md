@@ -40,11 +40,33 @@
 
 ---
 
-## Phase 6: Orchestration, CLI, Reporting & API (Pending Approval)
-- [ ] `analyzer.py`
-- [ ] Config (`pipelineguard.yml`)
-- [ ] Risk scoring (0-100)
-- [ ] `events.py` + JSON Schema
-- [ ] `reporter.py` (text, JSON, SARIF 2.1.0)
-- [ ] CLI (`python -m security.workflow scan`)
-- [ ] Public API (`analyze_path`, `analyze_text`)
+## Phase 6: Orchestration, CLI, Reporting & API
+- [x] **Step 1: Reserved Rules & Analyzer**
+  - [x] Add `PG-WF-900` (parse error / limits exceeded) and `PG-WF-901` (detector error) to `rules.py`
+  - [x] Implement `analyzer.py` (`AnalysisResult`, exception isolation, suppression parsing with mandatory reason, dedupe, safe path scanning)
+  - [x] Tests in `tests/test_analyzer.py`
+- [ ] **Step 2: Configuration (`config.py`)**
+  - [ ] Implement strict `config.py` (overrides, allowlists, fail_on, excludes, defaults, exit code 3 on error)
+  - [ ] Tests in `tests/test_config.py`
+- [ ] **Step 3: Risk Scoring (`risk.py`)**
+  - [ ] Implement pure deterministic risk scoring formula (0-100 score + grade A-F)
+  - [ ] Tests in `tests/test_risk.py`
+- [ ] **Step 4: Events & Schema (`events.py`)**
+  - [ ] Event serialization adhering to common PipelineGuard event schema
+  - [ ] JSON Schema `security/workflow/schemas/pipelineguard-event.schema.json`
+  - [ ] Tests in `tests/test_events.py`
+- [ ] **Step 5: Reporter (`reporter.py`)**
+  - [ ] Formats: text (sanitized), json (stable keys), sarif (2.1.0)
+  - [ ] Exit code determination (0 clean, 1 block, 2 warn-only, 3 error)
+  - [ ] Tests in `tests/test_reporter.py`
+- [ ] **Step 6: CLI (`__main__.py`)**
+  - [ ] Argument parsing (`scan <paths>`, `--format`, `--config`, `--fail-on`, `--output`, `--baseline`, `--repository`)
+  - [ ] Baseline matching and generation
+  - [ ] Tests in `tests/test_cli.py`
+- [ ] **Step 7: Public API (`api.py` & `__init__.py`)**
+  - [ ] Typed `analyze_path()`, `analyze_text()`, `to_events()`
+  - [ ] Re-export public surface in `security/workflow/__init__.py`
+  - [ ] Tests in `tests/test_api.py`
+- [ ] **Step 8: End-to-End & Quality Gate**
+  - [ ] Tests in `tests/test_e2e.py`
+  - [ ] All linters, types, tests, and coverage passing

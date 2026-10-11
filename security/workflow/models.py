@@ -61,6 +61,8 @@ class ParseResult:
 
     workflow: Workflow | None
     error: str | None
+    raw_text: str | None = None
+    path: str | None = None
 
     @property
     def ok(self) -> bool:
