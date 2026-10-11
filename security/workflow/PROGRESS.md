@@ -14,8 +14,8 @@
   - [x] `security/workflow/detectors/commands.py` (remove loop-variable closure B023, typed helper, fix mypy)
   - [x] `security/workflow/detectors/network.py` (remove loop-variable closure B023, import sorting, fix mypy)
   - [x] `security/workflow/detectors/modification.py` (import sorting)
-- [ ] **Step 2: Supply Chain Detector**
-  - [ ] `security/workflow/detectors/supply_chain.py` (PG-WF-019 unpinned actions, PG-WF-020 persist-credentials)
+- [x] **Step 2: Supply Chain Detector**
+  - [x] `security/workflow/detectors/supply_chain.py` (PG-WF-019 unpinned actions, PG-WF-020 persist-credentials)
 - [ ] **Step 3: Detector Unit Tests**
   - [ ] `security/workflow/tests/test_detector_injection.py`
   - [ ] `security/workflow/tests/test_detector_permissions.py`

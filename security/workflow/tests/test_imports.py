@@ -2,24 +2,26 @@
 
 import security.workflow
 import security.workflow.analyzer
-import security.workflow.events
-import security.workflow.finding
-import security.workflow.models
-import security.workflow.parser
-import security.workflow.reporter
-import security.workflow.rules
 import security.workflow.detectors
 import security.workflow.detectors.commands
 import security.workflow.detectors.injection
 import security.workflow.detectors.modification
 import security.workflow.detectors.network
 import security.workflow.detectors.permissions
+import security.workflow.detectors.supply_chain
+import security.workflow.events
+import security.workflow.finding
+import security.workflow.models
+import security.workflow.parser
+import security.workflow.reporter
+import security.workflow.rules
 
 
 def test_namespace_package_has_no_security_init():
     """`security/` stays a namespace package so Member 2's tree can merge cleanly."""
-    import security
     import pathlib
+
+    import security
 
     security_dir = pathlib.Path(security.__file__).parent if getattr(security, "__file__", None) else None
     # Namespace packages typically have __file__ is None.
@@ -47,3 +49,4 @@ def test_detector_modules_import():
     assert security.workflow.detectors.permissions.__doc__
     assert security.workflow.detectors.network.__doc__
     assert security.workflow.detectors.modification.__doc__
+    assert security.workflow.detectors.supply_chain.__doc__
