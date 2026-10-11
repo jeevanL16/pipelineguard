@@ -67,6 +67,6 @@
   - [x] Typed `analyze_path()`, `analyze_text()`, `to_events()`
   - [x] Re-export public surface in `security/workflow/__init__.py`
   - [x] Tests in `tests/test_api.py`
-- [ ] **Step 8: End-to-End & Quality Gate**
-  - [ ] Tests in `tests/test_e2e.py`
-  - [ ] All linters, types, tests, and coverage passing
+- [x] **Step 8: End-to-End & Quality Gate**
+  - [x] Tests in `tests/test_e2e.py`
+  - [x] All linters, types, tests, and coverage passing (pytest 96%, ruff clean, mypy --strict clean, bandit clean)

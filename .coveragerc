@@ -1,0 +1,7 @@
+[run]
+omit =
+    security/workflow/tests/*
+    security/workflow/labs/*
+
+[report]
+show_missing = True
