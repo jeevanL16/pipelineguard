@@ -529,6 +529,25 @@ _RULES: Final[list[Rule]] = [
             "https://github.com/actions/checkout#usage",
         ),
     ),
+    Rule(
+        id="PG-WF-023",
+        title="Cryptominer or known malicious tool invoked in run:",
+        description=(
+            "A run: step references a well-known cryptocurrency mining binary "
+            "(e.g. xmrig, cpuminer) or another tool strongly associated with "
+            "runner abuse.  This is a high-confidence indicator of a compromised "
+            "or malicious workflow."
+        ),
+        severity=Severity.CRITICAL,
+        action=Action.BLOCK,
+        cwe="CWE-829",
+        remediation=(
+            "Remove the mining tool invocation immediately.  Rotate all secrets "
+            "accessible to the runner and investigate how the code was introduced. "
+            "Review all recent commits and workflow changes."
+        ),
+        references=(),
+    ),
 ]
 
 

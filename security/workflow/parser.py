@@ -229,6 +229,7 @@ def _parse_jobs(
                 steps=_parse_steps(body.get("steps"), lines),
                 line=line if line is not None else lines.get(id(body)),
                 expressions=_collect_expressions(body, line),
+                secrets=body.get("secrets"),
             )
         )
     return jobs
@@ -252,6 +253,7 @@ def _parse_steps(steps_raw: Any, lines: dict[int, int]) -> list[Step]:
                 env=_as_env(item.get("env")),
                 line=step_line,
                 expressions=_collect_expressions(item, step_line),
+                with_inputs=_as_dict(item.get("with")),
             )
         )
     return steps
@@ -260,6 +262,17 @@ def _parse_steps(steps_raw: Any, lines: dict[int, int]) -> list[Step]:
 def _as_env(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
         return dict(value)
+    return {}
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    """Return *value* as a plain str-keyed dict, or empty dict.
+
+    Unlike :func:`_as_env`, values are NOT coerced to strings so that
+    booleans (e.g. ``persist-credentials: false``) are preserved.
+    """
+    if isinstance(value, dict):
+        return {str(k): v for k, v in value.items()}
     return {}
 
 

@@ -27,6 +27,7 @@ class Step:
     env: dict[str, Any]
     line: int | None
     expressions: list[Expression] = field(default_factory=list)
+    with_inputs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -39,6 +40,7 @@ class Job:
     steps: list[Step]
     line: int | None
     expressions: list[Expression] = field(default_factory=list)
+    secrets: Any = None
 
 
 @dataclass
