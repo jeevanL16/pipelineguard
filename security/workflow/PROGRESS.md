@@ -19,7 +19,7 @@
 - [ ] **Step 3: Detector Unit Tests**
   - [x] `security/workflow/tests/test_detector_injection.py`
   - [x] `security/workflow/tests/test_detector_permissions.py`
-  - [ ] `security/workflow/tests/test_detector_commands.py`
+  - [x] `security/workflow/tests/test_detector_commands.py`
   - [ ] `security/workflow/tests/test_detector_network.py`
   - [ ] `security/workflow/tests/test_detector_modification.py`
   - [ ] `security/workflow/tests/test_detector_supply_chain.py`
