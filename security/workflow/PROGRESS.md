@@ -79,7 +79,10 @@
 - [x] **Step 1: Coverage Gate Enforced (`--cov-fail-under=90`, all modules >= 90%)**
   - [x] Enforced `fail_under = 90` in `.coveragerc` and `addopts` in `pytest.ini`
   - [x] Coverage edge cases tested in `tests/test_coverage_gap.py` (98% overall, every module >= 94%)
-- [ ] **Step 2: Hostile-Input Test Suite (`tests/test_hostile_inputs.py`)**
+- [x] **Step 2: Hostile-Input Test Suite (`tests/test_hostile_inputs.py`)**
+  - [x] Alias bombs, deep nesting, huge nodes/lines, tag execution prevention
+  - [x] Size limits, binary/BOM/NUL encoding, count limits, symlink escape and loop defense
+  - [x] Terminal control/ANSI/bidi stripping and CLI output path defense
 - [ ] **Step 3: Fuzzing Suite (`tests/test_fuzz.py` with Hypothesis)**
 - [ ] **Step 4: ReDoS Audit (`tests/test_redos.py`)**
 - [ ] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**

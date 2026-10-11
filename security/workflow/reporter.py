@@ -21,8 +21,11 @@ if TYPE_CHECKING:
     from security.workflow.analyzer import AnalysisResult
     from security.workflow.config import Config
 
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
-_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_ANSI_CSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+_OSC_RE = re.compile(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)")
+_CONTROL_CHARS_RE = re.compile(
+    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x1b\u200e\u200f\u202a-\u202e\u2066-\u2069]"
+)
 
 _SARIF_LEVEL_MAP = {
     Severity.CRITICAL: "error",
@@ -42,9 +45,10 @@ _SEVERITY_ORDER: dict[Severity, int] = {
 
 
 def sanitize_text(text: str) -> str:
-    """Strip ANSI escape sequences and non-printable control characters."""
-    without_ansi = _ANSI_RE.sub("", text)
-    return _CONTROL_CHARS_RE.sub("", without_ansi)
+    """Strip ANSI escape sequences, OSC strings, bidi overrides, and control characters."""
+    without_osc = _OSC_RE.sub("", text)
+    without_csi = _ANSI_CSI_RE.sub("", without_osc)
+    return _CONTROL_CHARS_RE.sub("", without_csi)
 
 
 def compute_exit_code(
@@ -119,7 +123,7 @@ def report_text(
     base_set = baselined_fingerprints or set()
     lines: list[str] = []
 
-    repo_display = f" for repository '{repository}'" if repository else ""
+    repo_display = f" for repository '{sanitize_text(repository)}'" if repository else ""
     lines.append(f"PipelineGuard Workflow Security Report{repo_display}")
     lines.append("=" * 60)
 
@@ -290,7 +294,7 @@ def report_json(
 
     payload: dict[str, Any] = {
         "schema_version": "1.0.0",
-        "repository": repository,
+        "repository": sanitize_text(repository),
         "workflows_analyzed": result.workflows_analyzed,
         "summary": {
             "total_findings": len(result.findings),
