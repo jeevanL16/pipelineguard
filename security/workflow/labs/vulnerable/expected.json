@@ -1,0 +1,92 @@
+{
+  "dangerous_commands.yml": {
+    "rules": [
+      "PG-WF-008",
+      "PG-WF-009",
+      "PG-WF-010",
+      "PG-WF-011",
+      "PG-WF-021",
+      "PG-WF-022",
+      "PG-WF-023"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-008", "line": null},
+      {"rule_id": "PG-WF-009", "line": null},
+      {"rule_id": "PG-WF-010", "line": null},
+      {"rule_id": "PG-WF-011", "line": null},
+      {"rule_id": "PG-WF-021", "line": null},
+      {"rule_id": "PG-WF-022", "line": null},
+      {"rule_id": "PG-WF-023", "line": null}
+    ]
+  },
+  "dangerous_permissions.yml": {
+    "rules": [
+      "PG-WF-004",
+      "PG-WF-005",
+      "PG-WF-007"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-004", "line": null},
+      {"rule_id": "PG-WF-005", "line": 8},
+      {"rule_id": "PG-WF-007", "line": 19}
+    ]
+  },
+  "network_abuse.yml": {
+    "rules": [
+      "PG-WF-012",
+      "PG-WF-013",
+      "PG-WF-014",
+      "PG-WF-015"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-012", "line": null},
+      {"rule_id": "PG-WF-013", "line": null},
+      {"rule_id": "PG-WF-014", "line": null},
+      {"rule_id": "PG-WF-015", "line": null}
+    ]
+  },
+  "persistence_modification.yml": {
+    "rules": [
+      "PG-WF-016",
+      "PG-WF-017",
+      "PG-WF-018"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-016", "line": null},
+      {"rule_id": "PG-WF-017", "line": null},
+      {"rule_id": "PG-WF-018", "line": null}
+    ]
+  },
+  "pwn_request.yml": {
+    "rules": [
+      "PG-WF-006"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-006", "line": 11}
+    ]
+  },
+  "script_injection.yml": {
+    "rules": [
+      "PG-WF-001",
+      "PG-WF-002",
+      "PG-WF-003"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-001", "line": null},
+      {"rule_id": "PG-WF-001", "line": null},
+      {"rule_id": "PG-WF-002", "line": null},
+      {"rule_id": "PG-WF-003", "line": null}
+    ]
+  },
+  "unpinned_actions.yml": {
+    "rules": [
+      "PG-WF-019",
+      "PG-WF-020"
+    ],
+    "findings": [
+      {"rule_id": "PG-WF-019", "line": null},
+      {"rule_id": "PG-WF-019", "line": 11},
+      {"rule_id": "PG-WF-020", "line": 11}
+    ]
+  }
+}

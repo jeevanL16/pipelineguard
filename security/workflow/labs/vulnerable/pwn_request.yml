@@ -1,0 +1,19 @@
+name: Pwn Request Vulnerability
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  untrusted-checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request head ref
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: false
+      - name: Run checks
+        run: echo "Testing pull request"

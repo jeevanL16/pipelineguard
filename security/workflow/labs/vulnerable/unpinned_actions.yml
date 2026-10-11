@@ -1,0 +1,19 @@
+name: Unpinned Actions Vulnerability
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with default credentials and mutable tag
+        uses: actions/checkout@v4
+
+      - name: Setup node using branch reference
+        uses: actions/setup-node@main
+        with:
+          node-version: 18

@@ -1,0 +1,36 @@
+name: Hardened Continuous Integration
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a6004b805763da
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Safe greeting using env indirection
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          echo "Building commit ${GITHUB_SHA} on repository ${REPO_NAME}"
+          if [ -n "${HEAD_REF}" ]; then
+            echo "Pull request branch is ${HEAD_REF}"
+          fi

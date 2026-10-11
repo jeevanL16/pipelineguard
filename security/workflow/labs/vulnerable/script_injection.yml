@@ -1,0 +1,29 @@
+name: Script Injection Vulnerability
+on:
+  pull_request:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+
+      - name: Echo issue title in shell
+        run: echo "Processing PR title ${{ github.event.pull_request.title }}"
+
+      - name: Run inline JS with untrusted body
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const prBody = "${{ github.event.pull_request.body }}";
+            console.log(prBody);
+
+      - name: Write untrusted ref to GITHUB_ENV
+        run: echo "BRANCH_REF=${{ github.head_ref }}" >> $GITHUB_ENV

@@ -1,0 +1,20 @@
+name: Dangerous Permissions Vulnerability
+on:
+  push:
+    branches: [main]
+
+jobs:
+  admin-job:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - name: Build
+        run: echo "Building release"
+
+  delegate:
+    uses: org/repo/.github/workflows/reusable.yml@b4ffde65f46336ab88eb53be808477a3936bae11
+    secrets: inherit

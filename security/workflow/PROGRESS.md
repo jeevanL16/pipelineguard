@@ -26,10 +26,10 @@
 - [x] **Step 4: Fix Existing Tests for mypy --strict**
   - [x] `security/workflow/tests/test_parser.py`
   - [x] `security/workflow/tests/test_imports.py`
-- [ ] **Step 5: Labs Fixtures**
-  - [ ] `security/workflow/labs/vulnerable/` (realistic workflows triggering PG-WF-001..023)
-  - [ ] `security/workflow/labs/vulnerable/expected.json`
-  - [ ] `security/workflow/labs/secure/` (hardened workflows with zero findings)
+- [x] **Step 5: Labs Fixtures**
+  - [x] `security/workflow/labs/vulnerable/` (realistic workflows triggering PG-WF-001..023)
+  - [x] `security/workflow/labs/vulnerable/expected.json`
+  - [x] `security/workflow/labs/secure/` (hardened workflows with zero findings)
 - [ ] **Step 6: Labs Integration Test**
   - [ ] `security/workflow/tests/test_labs.py`
 - [ ] **Step 7: Quality Gate**
