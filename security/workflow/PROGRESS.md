@@ -8,12 +8,12 @@
   - [x] `security/workflow/rules.py` (Rule `PG-WF-023`)
   - [x] `security/workflow/detectors/_base.py` (`make_finding`, `trigger_set`)
   - [x] `security/workflow/PROGRESS.md` created
-- [ ] **Step 1: Lint & Type Fixes in Existing Detectors**
-  - [ ] `security/workflow/detectors/injection.py` (import sorting)
-  - [ ] `security/workflow/detectors/permissions.py` (import sorting)
-  - [ ] `security/workflow/detectors/commands.py` (remove loop-variable closure B023, typed helper, fix mypy)
-  - [ ] `security/workflow/detectors/network.py` (remove loop-variable closure B023, import sorting, fix mypy)
-  - [ ] `security/workflow/detectors/modification.py` (import sorting)
+- [x] **Step 1: Lint & Type Fixes in Existing Detectors**
+  - [x] `security/workflow/detectors/injection.py` (import sorting)
+  - [x] `security/workflow/detectors/permissions.py` (import sorting)
+  - [x] `security/workflow/detectors/commands.py` (remove loop-variable closure B023, typed helper, fix mypy)
+  - [x] `security/workflow/detectors/network.py` (remove loop-variable closure B023, import sorting, fix mypy)
+  - [x] `security/workflow/detectors/modification.py` (import sorting)
 - [ ] **Step 2: Supply Chain Detector**
   - [ ] `security/workflow/detectors/supply_chain.py` (PG-WF-019 unpinned actions, PG-WF-020 persist-credentials)
 - [ ] **Step 3: Detector Unit Tests**
