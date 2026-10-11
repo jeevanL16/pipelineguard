@@ -104,7 +104,10 @@
   - [x] Reusable workflow job `uses:` 40-char SHA pinning enforced (`PG-WF-019`)
   - [x] Documented intentional analysis boundaries in `docs/limitations.md`
   - [x] Tests in `tests/test_detection_gaps.py`
-- [ ] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
+- [x] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
+  - [x] Pre-generated 1,000 realistic workflows across 5 distinct archetypes
+  - [x] Measured 500 workflows in 3.876s (129.0 wfs/s), 1,000 workflows in 7.119s (140.5 wfs/s)
+  - [x] Verified scaling ratio 1.84x (<= 3.0x budget threshold) and total time 7.119s (<= 15.0s budget)
 - [ ] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**
 - [ ] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**
 - [ ] **Step 10: Final Quality Gate (Full test & linter run)**
