@@ -48,8 +48,8 @@ _EXFIL_DOMAIN_RE: Final[re.Pattern[str]] = re.compile(
     r"|pipedream\.net"
     r"|requestbin\.(?:com|net)"
     r"|canarytokens\.com"
-    r"|discord(?:app)?\.com/api/webhooks/"
-    r"|hooks\.slack\.com/services/"
+    r"|discord(?:app)?\.com/api/webhooks"
+    r"|hooks\.slack\.com/services"
     r"|oast\.(?:me|pro|fun|live|site|online)"
     r"|interactsh\.com"
     r")/[^\s\"']{0,200}",
