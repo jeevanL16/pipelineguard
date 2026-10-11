@@ -22,7 +22,7 @@
   - [x] `security/workflow/tests/test_detector_commands.py`
   - [x] `security/workflow/tests/test_detector_network.py`
   - [x] `security/workflow/tests/test_detector_modification.py`
-  - [ ] `security/workflow/tests/test_detector_supply_chain.py`
+  - [x] `security/workflow/tests/test_detector_supply_chain.py`
 - [ ] **Step 4: Fix Existing Tests for mypy --strict**
   - [ ] `security/workflow/tests/test_parser.py`
   - [ ] `security/workflow/tests/test_imports.py`
