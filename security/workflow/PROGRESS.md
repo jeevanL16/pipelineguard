@@ -51,10 +51,10 @@
 - [x] **Step 3: Risk Scoring (`risk.py`)**
   - [x] Implement pure deterministic risk scoring formula (0-100 score + grade A-F)
   - [x] Tests in `tests/test_risk.py`
-- [ ] **Step 4: Events & Schema (`events.py`)**
-  - [ ] Event serialization adhering to common PipelineGuard event schema
-  - [ ] JSON Schema `security/workflow/schemas/pipelineguard-event.schema.json`
-  - [ ] Tests in `tests/test_events.py`
+- [x] **Step 4: Events & Schema (`events.py`)**
+  - [x] Event serialization adhering to common PipelineGuard event schema
+  - [x] JSON Schema `security/workflow/schemas/pipelineguard-event.schema.json`
+  - [x] Tests in `tests/test_events.py`
 - [ ] **Step 5: Reporter (`reporter.py`)**
   - [ ] Formats: text (sanitized), json (stable keys), sarif (2.1.0)
   - [ ] Exit code determination (0 clean, 1 block, 2 warn-only, 3 error)

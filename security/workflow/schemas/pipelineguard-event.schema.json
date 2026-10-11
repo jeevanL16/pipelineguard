@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pipelineguard.io/schemas/pipelineguard-event.schema.json",
+  "title": "PipelineGuard Security Event",
+  "description": "Standard security event format emitted by PipelineGuard workflow detectors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_type",
+    "source",
+    "severity",
+    "repository",
+    "file",
+    "line",
+    "rule",
+    "action",
+    "status",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "const": "workflow-security"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFO"
+      ]
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "file": {
+      "type": "string",
+      "minLength": 1
+    },
+    "line": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "rule": {
+      "type": "string",
+      "pattern": "^PG-WF-\\d{3}$"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "BLOCK",
+        "WARN"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suppressed",
+        "baselined"
+      ]
+    },
+    "fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string"
+    }
+  }
+}
