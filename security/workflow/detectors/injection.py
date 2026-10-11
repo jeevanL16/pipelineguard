@@ -153,6 +153,8 @@ def detect(result: ParseResult) -> list[Finding]:
             # PG-WF-001: run: injection
             if step.run is not None:
                 for expr in untrusted:
+                    if expr.text not in step.run:
+                        continue
                     snippet = step.run[:200] if step.run else ""
                     findings.append(
                         make_finding(
@@ -179,6 +181,8 @@ def detect(result: ParseResult) -> list[Finding]:
                 # PG-WF-003: GITHUB_ENV / GITHUB_OUTPUT / GITHUB_PATH write
                 if _GITHUB_SINK_WRITE_RE.search(step.run):
                     for expr in untrusted:
+                        if expr.text not in step.run:
+                            continue
                         findings.append(
                             make_finding(
                                 rule_id="PG-WF-003",
