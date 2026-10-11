@@ -108,7 +108,11 @@
   - [x] Pre-generated 1,000 realistic workflows across 5 distinct archetypes
   - [x] Measured 500 workflows in 3.876s (129.0 wfs/s), 1,000 workflows in 7.119s (140.5 wfs/s)
   - [x] Verified scaling ratio 1.84x (<= 3.0x budget threshold) and total time 7.119s (<= 15.0s budget)
-- [ ] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**
+- [x] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**
+  - [x] Created hardened `.github/workflows/pipelineguard-ci.yml` with top-level `permissions: contents: read`, concurrency, timeouts
+  - [x] Pinned all actions to 40-character SHAs with version comments (`checkout@b4ffde65f46336ab88eb53be808477a3936bae11`, `setup-python@0a5c61591373683505ea898e09a6ea1c87f51a66`, `upload-sarif@b7bf0a3ed3ecfa44160715d7c442788f65f0f923`)
+  - [x] Configured dogfood scan step running `python -m security.workflow scan .github/workflows --fail-on warn --format sarif --output pipelineguard.sarif`
+  - [x] Added dogfood unit tests in `tests/test_ci_dogfood.py` verifying zero findings and structural compliance
 - [ ] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**
 - [ ] **Step 10: Final Quality Gate (Full test & linter run)**
 

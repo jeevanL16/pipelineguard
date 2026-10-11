@@ -1,0 +1,86 @@
+name: PipelineGuard CI
+
+on:
+  push:
+    branches: [main, feature/**]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Lint, Type Check & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a6ea1c87f51a66 # v5.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r security/workflow/requirements.txt -r security/workflow/requirements-dev.txt
+
+      - name: Run Ruff linter
+        run: ruff check security
+
+      - name: Run Mypy strict type checking
+        run: python -m mypy --strict -p security.workflow
+
+      - name: Run Bandit security scanner
+        run: bandit -r security -x security/workflow/tests
+
+      - name: Run Pip-audit dependency vulnerability check
+        run: pip-audit -r security/workflow/requirements.txt
+
+      - name: Run Pytest test suite with coverage gate
+        run: python -m pytest security/workflow/tests/ -v
+
+  dogfood-scan:
+    name: PipelineGuard Self-Scan & SARIF Upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # pipelineguard:ignore PG-WF-005: GitHub Code Scanning upload requires security-events: write scope
+      security-events: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a6ea1c87f51a66 # v5.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r security/workflow/requirements.txt
+
+      - name: Dogfood scan repository workflows
+        run: |
+          python -m security.workflow scan .github/workflows --fail-on warn --format sarif --output pipelineguard.sarif
+
+      - name: Upload PipelineGuard SARIF report
+        uses: github/codeql-action/upload-sarif@b7bf0a3ed3ecfa44160715d7c442788f65f0f923 # v3.22.12
+        if: always()
+        with:
+          sarif_file: pipelineguard.sarif

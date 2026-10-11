@@ -55,6 +55,10 @@ _CHECKOUT_USES_RE: Final[re.Pattern[str]] = re.compile(
     r"^actions/checkout(?:@[^\s]{1,80})?$",
     re.IGNORECASE,
 )
+_SARIF_UPLOAD_RE: Final[re.Pattern[str]] = re.compile(
+    r"^github/codeql-action/upload-sarif(?:@[^\s]{1,80})?$",
+    re.IGNORECASE,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +175,17 @@ def detect(result: ParseResult) -> list[Finding]:
 
     for job in workflow.jobs:
         is_broad_job, reason_job = _has_write_scope(job.permissions)
+        # Operational exception: upload-sarif job requiring security-events: write
+        if (
+            is_broad_job
+            and reason_job == "security-events: write"
+            and any(
+                step.uses is not None and bool(_SARIF_UPLOAD_RE.match(step.uses.strip()))
+                for step in job.steps
+            )
+        ):
+            is_broad_job = False
+
         if is_broad_job:
             findings.append(
                 make_finding(
