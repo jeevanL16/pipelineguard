@@ -55,10 +55,10 @@
   - [x] Event serialization adhering to common PipelineGuard event schema
   - [x] JSON Schema `security/workflow/schemas/pipelineguard-event.schema.json`
   - [x] Tests in `tests/test_events.py`
-- [ ] **Step 5: Reporter (`reporter.py`)**
-  - [ ] Formats: text (sanitized), json (stable keys), sarif (2.1.0)
-  - [ ] Exit code determination (0 clean, 1 block, 2 warn-only, 3 error)
-  - [ ] Tests in `tests/test_reporter.py`
+- [x] **Step 5: Reporter (`reporter.py`)**
+  - [x] Formats: text (sanitized), json (stable keys), sarif (2.1.0)
+  - [x] Exit code determination (0 clean, 1 block, 2 warn-only, 3 error)
+  - [x] Tests in `tests/test_reporter.py`
 - [ ] **Step 6: CLI (`__main__.py`)**
   - [ ] Argument parsing (`scan <paths>`, `--format`, `--config`, `--fail-on`, `--output`, `--baseline`, `--repository`)
   - [ ] Baseline matching and generation
