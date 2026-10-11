@@ -32,11 +32,11 @@
   - [x] `security/workflow/labs/secure/` (hardened workflows with zero findings)
 - [x] **Step 6: Labs Integration Test**
   - [x] `security/workflow/tests/test_labs.py`
-- [ ] **Step 7: Quality Gate**
-  - [ ] `pytest -v --cov=security.workflow --cov-report=term-missing` (all pass, coverage >= 90%)
-  - [ ] `ruff check security/workflow` (0 errors)
-  - [ ] `mypy --strict -p security.workflow` (0 errors)
-  - [ ] `bandit -r security -x security/workflow/tests` (0 issues)
+- [x] **Step 7: Quality Gate**
+  - [x] `pytest -v --cov=security.workflow --cov-report=term-missing` (all pass, coverage >= 90%)
+  - [x] `ruff check security/workflow` (0 errors)
+  - [x] `mypy --strict -p security.workflow` (0 errors)
+  - [x] `bandit -r security -x security/workflow/tests` (0 issues)
 
 ---
 

@@ -5,3 +5,6 @@ gitleaks-report.json
 .mypy_cache/
 .ruff_cache/
 .venv/
+.coverage
+.coverage.*
+htmlcov/
