@@ -1,0 +1,14 @@
+name: Evasion Base64 Long Flag
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - name: Echo base64 decode with long flag piped to shell
+        run: |
+          echo "ZWNobyBoYWNrZWQK" | base64 --decode | /bin/bash

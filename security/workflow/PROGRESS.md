@@ -91,7 +91,11 @@
   - [x] Enumerated all compiled regexes across parser, analyzer, reporter, events, rules, detectors
   - [x] Tested pathological inputs (50k length, nested quantifiers) under strict 0.15s budget
   - [x] Hardened `_EXPRESSION_RE` with bounded quantifiers and lookaround to prevent quadratic backtracking
-- [ ] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**
+- [x] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**
+  - [x] 16 realistic, legitimate workflows in `labs/benign/` (asserted zero findings)
+  - [x] 12 evasion workflows in `labs/evasion/` with `expected.json` (line continuations, subshell curl, format/contains wrappers, mixed case, base64 flags, folded YAML)
+  - [x] Hardened `commands.py` (line continuations, subshell curl/wget, base64 variants) and `injection.py` (wrapper expressions)
+  - [x] Extended `tests/test_labs.py` covering benign and evasion corpora with exact assertions
 - [ ] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
 - [ ] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
 - [ ] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**

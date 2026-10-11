@@ -1,0 +1,13 @@
+name: Event Conditional
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  issues: read
+jobs:
+  label:
+    if: github.event.issue.state == 'open' && github.event.sender.login != 'bot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Status
+        run: echo "Condition matched safely in if expression"

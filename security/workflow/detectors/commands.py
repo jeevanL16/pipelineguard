@@ -27,7 +27,7 @@ from security.workflow.models import Job, ParseResult, Step
 # Compiled regexes — all bounded to prevent ReDoS
 # ---------------------------------------------------------------------------
 
-# PG-WF-008: curl/wget piped directly to a shell.
+# PG-WF-008: curl/wget piped directly to a shell or executed via subshell.
 # [^|#\n]{0,300} bounds the per-line scan.
 _CURL_PIPE_SHELL_RE: Final[re.Pattern[str]] = re.compile(
     r"\bcurl\b[^|#\n]{0,300}\|[^|#\n]{0,80}\b(?:bash|sh|zsh|ash|dash|fish)\b",
@@ -37,16 +37,24 @@ _WGET_PIPE_SHELL_RE: Final[re.Pattern[str]] = re.compile(
     r"\bwget\b[^|#\n]{0,300}\|[^|#\n]{0,80}\b(?:bash|sh|zsh|ash|dash|fish)\b",
     re.IGNORECASE,
 )
+_DOWNLOAD_SUBSHELL_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:bash|sh|zsh|ash|dash|fish)\b[^#\n]{0,80}-c\s+[\"']?\$\([^#\n]{0,300}\b(?:curl|wget)\b",
+    re.IGNORECASE,
+)
+_DOWNLOAD_BACKTICK_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:bash|sh|zsh|ash|dash|fish)\b[^#\n]{0,80}-c\s+[\"']?`[^#\n]{0,300}\b(?:curl|wget)\b",
+    re.IGNORECASE,
+)
 
 # PG-WF-009: base64 decode piped to shell.
 _BASE64_PIPE_SHELL_RE: Final[re.Pattern[str]] = re.compile(
-    r"\bbase64\b[^|#\n]{0,150}-d[^|#\n]{0,150}\|[^|#\n]{0,80}"
+    r"\bbase64\b[^|#\n]{0,150}(?:-d|--decode|-D)[^|#\n]{0,150}\|[^|#\n]{0,80}"
     r"\b(?:bash|sh|zsh|ash|dash|fish)\b",
     re.IGNORECASE,
 )
 # Alternate form: echo <blob> | base64 -d | bash
 _ECHO_B64_PIPE_RE: Final[re.Pattern[str]] = re.compile(
-    r"\becho\b[^|#\n]{0,200}\|[^|#\n]{0,80}\bbase64\b[^|#\n]{0,80}-d"
+    r"\becho\b[^|#\n]{0,200}\|[^|#\n]{0,80}\bbase64\b[^|#\n]{0,80}(?:-d|--decode|-D)"
     r"[^|#\n]{0,80}\|[^|#\n]{0,80}\b(?:bash|sh|zsh|ash|dash|fish)\b",
     re.IGNORECASE,
 )
@@ -115,8 +123,13 @@ _MINER_RE: Final[re.Pattern[str]] = re.compile(
 
 
 def _find_curl_pipe(run: str) -> str | None:
-    """Return the first matching line for curl/wget-pipe-shell, or None."""
-    m = _CURL_PIPE_SHELL_RE.search(run) or _WGET_PIPE_SHELL_RE.search(run)
+    """Return the first matching line for curl/wget-pipe-shell or subshell exec, or None."""
+    m = (
+        _CURL_PIPE_SHELL_RE.search(run)
+        or _WGET_PIPE_SHELL_RE.search(run)
+        or _DOWNLOAD_SUBSHELL_RE.search(run)
+        or _DOWNLOAD_BACKTICK_RE.search(run)
+    )
     return m.group(0)[:200] if m else None
 
 
@@ -234,7 +247,7 @@ def detect(result: ParseResult) -> list[Finding]:
         for step in job.steps:
             if not step.run:
                 continue
-            run = step.run
+            run = re.sub(r"\\\r?\n\s*", " ", step.run)
 
             # PG-WF-008
             snip = _find_curl_pipe(run)

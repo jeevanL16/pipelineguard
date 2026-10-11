@@ -1,0 +1,50 @@
+{
+  "evasion_01_line_continuation_pipe.yml": {
+    "rules": ["PG-WF-008"],
+    "description": "curl piped to bash split across lines via backslash line continuation"
+  },
+  "evasion_02_mixed_case_spaces.yml": {
+    "rules": ["PG-WF-008"],
+    "description": "mixed case cUrL piped to BaSh with irregular tabs and spaces"
+  },
+  "evasion_03_curl_sudo_bash.yml": {
+    "rules": ["PG-WF-008"],
+    "description": "curl piped to sudo bash"
+  },
+  "evasion_04_wget_sh.yml": {
+    "rules": ["PG-WF-008"],
+    "description": "wget quiet flag piped directly to sh"
+  },
+  "evasion_05_subshell_curl.yml": {
+    "rules": ["PG-WF-008"],
+    "description": "bash -c with command substitution executing curl payload"
+  },
+  "evasion_06_base64_decode_variants.yml": {
+    "rules": ["PG-WF-009"],
+    "description": "base64 --decode long option piped to /bin/bash"
+  },
+  "evasion_07_eval_subshell.yml": {
+    "rules": ["PG-WF-010"],
+    "description": "eval of subshell command substitution"
+  },
+  "evasion_08_format_injection.yml": {
+    "rules": ["PG-WF-001"],
+    "description": "untrusted issue title wrapped inside ${{ format() }} expression"
+  },
+  "evasion_09_contains_injection.yml": {
+    "rules": ["PG-WF-001"],
+    "description": "untrusted head_ref wrapped inside ${{ contains() }} ternary expression"
+  },
+  "evasion_10_folded_yaml_run.yml": {
+    "rules": ["PG-WF-001"],
+    "description": "folded scalar run block with untrusted comment body split across lines"
+  },
+  "evasion_11_github_script_quoted.yml": {
+    "rules": ["PG-WF-002"],
+    "description": "actions/github-script with inline quoted script using format expression"
+  },
+  "evasion_12_env_sink_write_indirection.yml": {
+    "rules": ["PG-WF-001", "PG-WF-003"],
+    "description": "untrusted expression written to GITHUB_ENV sink with format wrapper"
+  }
+}

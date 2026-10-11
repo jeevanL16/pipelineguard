@@ -1,0 +1,16 @@
+name: Evasion Format Wrapper
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - name: Format wrapped untrusted title
+        run: |
+          echo "${{ format('{0}', github.event.issue.title) }}"

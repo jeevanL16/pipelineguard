@@ -1,0 +1,12 @@
+name: Container Digest
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  container-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run container action
+        uses: docker://alpine@sha256:77726ef6b57ddf65bb551896826ec788861777a80057bc7a70a0581b77432096

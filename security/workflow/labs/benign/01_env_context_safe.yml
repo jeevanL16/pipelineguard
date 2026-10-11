@@ -1,0 +1,17 @@
+name: Safe Env Context
+on:
+  issues:
+    types: [opened]
+permissions:
+  issues: read
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check issue title safely via environment variable
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          echo "Processing issue: $ISSUE_TITLE"
+          printf '%s\n' "$ISSUE_BODY"

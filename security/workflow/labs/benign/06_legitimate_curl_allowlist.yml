@@ -1,0 +1,14 @@
+name: Download Package
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch package metadata from npm
+        run: |
+          curl -sSf https://registry.npmjs.org/express/latest -o express.json
+          cat express.json | jq .version

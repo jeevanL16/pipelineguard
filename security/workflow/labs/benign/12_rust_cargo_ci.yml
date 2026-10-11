@@ -1,0 +1,15 @@
+name: Rust CI
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          persist-credentials: false
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --all

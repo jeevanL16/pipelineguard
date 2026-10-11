@@ -23,6 +23,7 @@ from typing import Final
 from security.workflow.detectors._base import make_finding, trigger_set
 from security.workflow.finding import CONFIDENCE_HIGH, CONFIDENCE_MEDIUM, Finding
 from security.workflow.models import ParseResult
+from security.workflow.parser import _collect_expressions
 
 # ---------------------------------------------------------------------------
 # Untrusted context catalogues
@@ -80,7 +81,7 @@ _GITHUB_SINK_WRITE_RE: Final[re.Pattern[str]] = re.compile(
 
 
 def _is_untrusted(text: str) -> bool:
-    """Return True if *text* is a known untrusted GitHub context expression.
+    """Return True if *text* references a known untrusted GitHub context expression.
 
     Args:
         text: The expression text (the content inside ``${{ ... }}``).
@@ -93,6 +94,14 @@ def _is_untrusted(text: str) -> bool:
         return True
     for prefix in _UNTRUSTED_PREFIXES:
         if stripped.startswith(prefix):
+            return True
+    # Detect untrusted contexts wrapped in functions (e.g. format(), contains(), join(), etc.)
+    for target in _UNTRUSTED_EXACT:
+        if re.search(r"\b" + re.escape(target) + r"\b", stripped):
+            return True
+    for prefix in _UNTRUSTED_PREFIXES:
+        clean_prefix = prefix.rstrip(" .[")
+        if re.search(r"\b" + re.escape(clean_prefix) + r"[.\[]", stripped):
             return True
     return False
 
@@ -138,86 +147,92 @@ def detect(result: ParseResult) -> list[Finding]:
 
     for job in workflow.jobs:
         for step in job.steps:
-            untrusted = [e for e in step.expressions if _is_untrusted(e.text)]
-            if not untrusted:
-                continue
-
-            expr_texts = [e.text for e in untrusted]
-            evidence_base = {
-                "contexts": expr_texts,
-                "high_risk_trigger": high_risk,
-                "triggers": sorted(triggers),
-            }
             confidence = CONFIDENCE_HIGH if high_risk else CONFIDENCE_MEDIUM
 
             # PG-WF-001: run: injection
             if step.run is not None:
-                for expr in untrusted:
-                    if expr.text not in step.run:
-                        continue
-                    snippet = step.run[:200] if step.run else ""
-                    findings.append(
-                        make_finding(
-                            rule_id="PG-WF-001",
-                            file=file,
-                            line=expr.line or step.line,
-                            job_id=job.id,
-                            step_name=step.name,
-                            snippet=snippet,
-                            message=(
-                                f"Untrusted expression '${{{{ {expr.text} }}}}' "
-                                f"interpolated directly in run: step."
-                                + (
-                                    " Trigger is high-risk: "
-                                    + ", ".join(sorted(triggers & _HIGH_RISK_TRIGGERS))
-                                    if high_risk
-                                    else ""
-                                )
-                            ),
-                            confidence=confidence,
-                            evidence={**evidence_base, "expression": expr.text},
-                        )
-                    )
-                # PG-WF-003: GITHUB_ENV / GITHUB_OUTPUT / GITHUB_PATH write
-                if _GITHUB_SINK_WRITE_RE.search(step.run):
-                    for expr in untrusted:
-                        if expr.text not in step.run:
-                            continue
+                run_untrusted = [
+                    e for e in _collect_expressions(step.run, step.line)
+                    if _is_untrusted(e.text)
+                ]
+                if run_untrusted:
+                    evidence_base = {
+                        "contexts": [e.text for e in run_untrusted],
+                        "high_risk_trigger": high_risk,
+                        "triggers": sorted(triggers),
+                    }
+                    for expr in run_untrusted:
+                        snippet = step.run[:200]
                         findings.append(
                             make_finding(
-                                rule_id="PG-WF-003",
+                                rule_id="PG-WF-001",
                                 file=file,
                                 line=expr.line or step.line,
                                 job_id=job.id,
                                 step_name=step.name,
-                                snippet=step.run[:200],
+                                snippet=snippet,
                                 message=(
                                     f"Untrusted expression '${{{{ {expr.text} }}}}' "
-                                    f"written to GITHUB_ENV/GITHUB_OUTPUT/GITHUB_PATH."
+                                    f"interpolated directly in run: step."
+                                    + (
+                                        " Trigger is high-risk: "
+                                        + ", ".join(sorted(triggers & _HIGH_RISK_TRIGGERS))
+                                        if high_risk
+                                        else ""
+                                    )
                                 ),
                                 confidence=confidence,
                                 evidence={**evidence_base, "expression": expr.text},
                             )
                         )
+                    # PG-WF-003: GITHUB_ENV / GITHUB_OUTPUT / GITHUB_PATH write
+                    if _GITHUB_SINK_WRITE_RE.search(step.run):
+                        for expr in run_untrusted:
+                            findings.append(
+                                make_finding(
+                                    rule_id="PG-WF-003",
+                                    file=file,
+                                    line=expr.line or step.line,
+                                    job_id=job.id,
+                                    step_name=step.name,
+                                    snippet=step.run[:200],
+                                    message=(
+                                        f"Untrusted expression '${{{{ {expr.text} }}}}' "
+                                        f"written to GITHUB_ENV/GITHUB_OUTPUT/GITHUB_PATH."
+                                    ),
+                                    confidence=confidence,
+                                    evidence={**evidence_base, "expression": expr.text},
+                                )
+                            )
 
             # PG-WF-002: github-script injection
             if step.uses is not None and _is_github_script(step.uses):
-                for expr in untrusted:
-                    findings.append(
-                        make_finding(
-                            rule_id="PG-WF-002",
-                            file=file,
-                            line=expr.line or step.line,
-                            job_id=job.id,
-                            step_name=step.name,
-                            snippet=step.uses,
-                            message=(
-                                f"Untrusted expression '${{{{ {expr.text} }}}}' "
-                                f"passed to actions/github-script."
-                            ),
-                            confidence=confidence,
-                            evidence={**evidence_base, "expression": expr.text},
+                script_untrusted = [
+                    e for e in _collect_expressions(step.with_inputs, step.line)
+                    if _is_untrusted(e.text)
+                ]
+                if script_untrusted:
+                    evidence_base = {
+                        "contexts": [e.text for e in script_untrusted],
+                        "high_risk_trigger": high_risk,
+                        "triggers": sorted(triggers),
+                    }
+                    for expr in script_untrusted:
+                        findings.append(
+                            make_finding(
+                                rule_id="PG-WF-002",
+                                file=file,
+                                line=expr.line or step.line,
+                                job_id=job.id,
+                                step_name=step.name,
+                                snippet=step.uses,
+                                message=(
+                                    f"Untrusted expression '${{{{ {expr.text} }}}}' "
+                                    f"passed to actions/github-script."
+                                ),
+                                confidence=confidence,
+                                evidence={**evidence_base, "expression": expr.text},
+                            )
                         )
-                    )
 
     return findings
