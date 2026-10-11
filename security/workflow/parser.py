@@ -18,7 +18,7 @@ from yaml.nodes import MappingNode
 
 from security.workflow.models import Expression, Job, ParseResult, Step, Workflow
 
-_EXPRESSION_RE = re.compile(r"\$\{\{([\s\S]*?)\}\}")
+_EXPRESSION_RE = re.compile(r"\$\{\{((?:[^{}]|\{(?!\{)|\}(?!\})){0,2000}?)\}\}")
 _CONTEXT_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)")
 
 

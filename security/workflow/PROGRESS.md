@@ -87,7 +87,10 @@
   - [x] Crash freedom for arbitrary text & structured YAML
   - [x] Determinism, secret redaction, and control char stripping invariants
   - [x] Monotonicity and score bounding [0, 100]
-- [ ] **Step 4: ReDoS Audit (`tests/test_redos.py`)**
+- [x] **Step 4: ReDoS Audit (`tests/test_redos.py`)**
+  - [x] Enumerated all compiled regexes across parser, analyzer, reporter, events, rules, detectors
+  - [x] Tested pathological inputs (50k length, nested quantifiers) under strict 0.15s budget
+  - [x] Hardened `_EXPRESSION_RE` with bounded quantifiers and lookaround to prevent quadratic backtracking
 - [ ] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**
 - [ ] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
 - [ ] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
