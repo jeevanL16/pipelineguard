@@ -126,7 +126,22 @@ def parse_workflow_text(text: str, path: str = "<string>") -> ParseResult:
 
     jobs_raw = data.get("jobs")
     if jobs_raw is None:
-        jobs: list[Job] = []
+        runs_raw = data.get("runs")
+        if isinstance(runs_raw, dict) and "steps" in runs_raw:
+            comp_steps = _parse_steps(runs_raw.get("steps"), lines)
+            comp_job = Job(
+                id="composite-action",
+                name=_optional_str(data.get("name")),
+                runs_on=None,
+                permissions=None,
+                env=_as_env(data.get("env")),
+                steps=comp_steps,
+                line=lines.get(id(runs_raw)),
+                expressions=_collect_expressions(runs_raw, lines.get(id(runs_raw))),
+            )
+            jobs = [comp_job]
+        else:
+            jobs = []
     elif not isinstance(jobs_raw, dict):
         return ParseResult(
             workflow=None,
@@ -236,6 +251,7 @@ def _parse_jobs(
                 line=line if line is not None else lines.get(id(body)),
                 expressions=_collect_expressions(body, line),
                 secrets=body.get("secrets"),
+                uses=_optional_str(body.get("uses")),
             )
         )
     return jobs

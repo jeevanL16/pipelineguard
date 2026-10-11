@@ -96,7 +96,14 @@
   - [x] 12 evasion workflows in `labs/evasion/` with `expected.json` (line continuations, subshell curl, format/contains wrappers, mixed case, base64 flags, folded YAML)
   - [x] Hardened `commands.py` (line continuations, subshell curl/wget, base64 variants) and `injection.py` (wrapper expressions)
   - [x] Extended `tests/test_labs.py` covering benign and evasion corpora with exact assertions
-- [ ] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
+- [x] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
+  - [x] Composite actions (`runs.steps`) scanned for injection and dangerous commands
+  - [x] `workflow_call` inputs (`inputs.foo`, `inputs['foo']`) treated as untrusted in injection detector
+  - [x] `env:` untrusted assignment safe (zero findings) vs unsafe shell context execution flagged
+  - [x] `actions/github-script` script untrusted expressions flagged (`PG-WF-002`)
+  - [x] Reusable workflow job `uses:` 40-char SHA pinning enforced (`PG-WF-019`)
+  - [x] Documented intentional analysis boundaries in `docs/limitations.md`
+  - [x] Tests in `tests/test_detection_gaps.py`
 - [ ] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
 - [ ] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**
 - [ ] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**

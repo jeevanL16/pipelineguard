@@ -53,7 +53,8 @@ _UNTRUSTED_EXACT: Final[frozenset[str]] = frozenset(
 _UNTRUSTED_PREFIXES: Final[tuple[str, ...]] = (
     "github.event.commits[",   # array element access
     "github.event.inputs.",    # workflow_dispatch inputs via event
-    "inputs.",                 # workflow_dispatch inputs shorthand
+    "inputs.",                 # workflow_dispatch & workflow_call inputs shorthand
+    "inputs[",                 # bracket-indexed inputs
 )
 
 #: Triggers that significantly raise the exploitability of injection.

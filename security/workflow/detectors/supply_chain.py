@@ -120,7 +120,7 @@ def _emit_finding(
     *,
     file: str,
     job: Job,
-    step: Step,
+    step: Step | None = None,
     rule_id: str,
     snippet: str,
     msg: str,
@@ -130,9 +130,9 @@ def _emit_finding(
         make_finding(
             rule_id=rule_id,
             file=file,
-            line=step.line,
+            line=step.line if step is not None else job.line,
             job_id=job.id,
-            step_name=step.name,
+            step_name=step.name if step is not None else None,
             snippet=snippet,
             message=msg,
             confidence=conf,
@@ -167,6 +167,23 @@ def detect(result: ParseResult) -> list[Finding]:
     findings: list[Finding] = []
 
     for job in workflow.jobs:
+        if job.uses:
+            job_uses = job.uses.strip()
+            if not _is_pinned(job_uses):
+                _emit_finding(
+                    findings,
+                    file=file,
+                    job=job,
+                    step=None,
+                    rule_id="PG-WF-019",
+                    snippet=f"uses: {job_uses}",
+                    msg=(
+                        f"Reusable workflow '{job_uses}' is not pinned to a 40-character commit SHA. "
+                        "Mutable tags or branches can allow supply-chain compromise."
+                    ),
+                    conf=CONFIDENCE_HIGH,
+                )
+
         for step in job.steps:
             if not step.uses:
                 continue

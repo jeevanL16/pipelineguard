@@ -41,6 +41,7 @@ class Job:
     line: int | None
     expressions: list[Expression] = field(default_factory=list)
     secrets: Any = None
+    uses: str | None = None
 
 
 @dataclass

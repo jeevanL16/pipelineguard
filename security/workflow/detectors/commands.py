@@ -72,6 +72,10 @@ _EVAL_BACKTICK_RE: Final[re.Pattern[str]] = re.compile(
     r"\beval\s+[\"']?`",
     re.IGNORECASE,
 )
+_SHELL_EXEC_VAR_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(?:bash|sh|zsh|ash|dash|fish)\b[^#\n]{0,80}-c\s+[\"']?\$[A-Za-z_][A-Za-z0-9_]*",
+    re.IGNORECASE,
+)
 
 # PG-WF-011: Reverse-shell indicators.
 _REVERSE_SHELL_RES: Final[tuple[re.Pattern[str], ...]] = (
@@ -140,11 +144,12 @@ def _find_base64_pipe(run: str) -> str | None:
 
 
 def _find_eval(run: str) -> str | None:
-    """Return the first eval-of-variable snippet, or None."""
+    """Return the first eval or unsafe shell execution of variable snippet, or None."""
     m = (
         _EVAL_VAR_RE.search(run)
         or _EVAL_SUBSHELL_RE.search(run)
         or _EVAL_BACKTICK_RE.search(run)
+        or _SHELL_EXEC_VAR_RE.search(run)
     )
     return m.group(0)[:200] if m else None
 
