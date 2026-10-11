@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pipelineguard"
+version = "1.0.0"
+description = "CI/CD Pipeline Security Gate and Workflow Analyzer"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML==6.0.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bandit==1.9.4",
+    "hypothesis==6.169.0",
+    "jsonschema==4.26.0",
+    "mypy==2.3.1",
+    "pip-audit==2.10.1",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "pytest-timeout==2.4.0",
+    "ruff==0.16.9",
+    "types-PyYAML==6.0.12.20260906",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+
+[tool.bandit]
+targets = ["security"]
+exclude_dirs = ["security/workflow/tests"]
+
+[tool.coverage.run]
+omit = [
+    "security/workflow/tests/*",
+    "security/workflow/labs/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90

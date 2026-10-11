@@ -113,6 +113,10 @@
   - [x] Pinned all actions to 40-character SHAs with version comments (`checkout@b4ffde65f46336ab88eb53be808477a3936bae11`, `setup-python@0a5c61591373683505ea898e09a6ea1c87f51a66`, `upload-sarif@b7bf0a3ed3ecfa44160715d7c442788f65f0f923`)
   - [x] Configured dogfood scan step running `python -m security.workflow scan .github/workflows --fail-on warn --format sarif --output pipelineguard.sarif`
   - [x] Added dogfood unit tests in `tests/test_ci_dogfood.py` verifying zero findings and structural compliance
-- [ ] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**
+- [x] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**
+  - [x] Pinned `security/workflow/requirements.txt` (PyYAML==6.0.3) and `requirements-dev.txt` with exact versions
+  - [x] Created consolidated `pyproject.toml` and `.pre-commit-config.yaml` with pinned revs
+  - [x] Ran `pip-audit` verifying zero vulnerabilities in runtime and dev dependencies
+  - [x] Added `scripts/check.ps1`, `scripts/check.sh`, and `Makefile` for one-command quality gate execution
 - [ ] **Step 10: Final Quality Gate (Full test & linter run)**
 
