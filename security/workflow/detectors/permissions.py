@@ -108,13 +108,7 @@ def _step_checks_out_head_ref(step: Step) -> bool:
     return False
 
 
-def _job_uses_external(job: Job) -> bool:
-    """Return True if the job calls an external reusable workflow (uses:)."""
-    # Jobs that call external workflows have a 'uses' key at the job level.
-    # Our parser doesn't expose job.uses directly, but expressions would contain
-    # any ${{ }} in that field. We detect by checking job.steps is empty and
-    # job.secrets is set — a reliable heuristic for a reusable-workflow call job.
-    return bool(job.secrets is not None and not job.steps)
+
 
 
 # ---------------------------------------------------------------------------
