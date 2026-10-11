@@ -70,3 +70,20 @@
 - [x] **Step 8: End-to-End & Quality Gate**
   - [x] Tests in `tests/test_e2e.py`
   - [x] All linters, types, tests, and coverage passing (pytest 96%, ruff clean, mypy --strict clean, bandit clean)
+
+---
+
+## Phase 7: Hardening, Fuzzing, Regression & Quality Gates
+
+- [x] **Step 0: Verification of Phase 6 & Initial Fixes**
+- [ ] **Step 1: Coverage Gate Enforced (`--cov-fail-under=90`, all modules >= 90%)**
+- [ ] **Step 2: Hostile-Input Test Suite (`tests/test_hostile_inputs.py`)**
+- [ ] **Step 3: Fuzzing Suite (`tests/test_fuzz.py` with Hypothesis)**
+- [ ] **Step 4: ReDoS Audit (`tests/test_redos.py`)**
+- [ ] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**
+- [ ] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
+- [ ] **Step 7: Performance Benchmarks (`tests/test_performance.py`)**
+- [ ] **Step 8: Self-CI + Dogfood Workflow (`.github/workflows/pipelineguard-ci.yml`)**
+- [ ] **Step 9: Tooling and Supply Chain (`requirements.txt`, `requirements-dev.txt`, scripts, .pre-commit-config.yaml, pip-audit)**
+- [ ] **Step 10: Final Quality Gate (Full test & linter run)**
+

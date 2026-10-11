@@ -30,6 +30,9 @@ def test_namespace_package_has_no_security_init() -> None:
 
 
 def test_workflow_package_imports() -> None:
+    import importlib
+
+    importlib.reload(security.workflow)
     assert security.workflow.__doc__
 
 
