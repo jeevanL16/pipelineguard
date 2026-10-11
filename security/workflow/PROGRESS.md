@@ -83,7 +83,10 @@
   - [x] Alias bombs, deep nesting, huge nodes/lines, tag execution prevention
   - [x] Size limits, binary/BOM/NUL encoding, count limits, symlink escape and loop defense
   - [x] Terminal control/ANSI/bidi stripping and CLI output path defense
-- [ ] **Step 3: Fuzzing Suite (`tests/test_fuzz.py` with Hypothesis)**
+- [x] **Step 3: Fuzzing Suite (`tests/test_fuzz.py` with Hypothesis)**
+  - [x] Crash freedom for arbitrary text & structured YAML
+  - [x] Determinism, secret redaction, and control char stripping invariants
+  - [x] Monotonicity and score bounding [0, 100]
 - [ ] **Step 4: ReDoS Audit (`tests/test_redos.py`)**
 - [ ] **Step 5: False-Positive / False-Negative Regression Corpus (`labs/benign/`, `labs/evasion/`)**
 - [ ] **Step 6: Detection Gap Review (Composite actions, workflow_call, env, github-script, reusable uses, docs/limitations.md)**
