@@ -59,10 +59,10 @@
   - [x] Formats: text (sanitized), json (stable keys), sarif (2.1.0)
   - [x] Exit code determination (0 clean, 1 block, 2 warn-only, 3 error)
   - [x] Tests in `tests/test_reporter.py`
-- [ ] **Step 6: CLI (`__main__.py`)**
-  - [ ] Argument parsing (`scan <paths>`, `--format`, `--config`, `--fail-on`, `--output`, `--baseline`, `--repository`)
-  - [ ] Baseline matching and generation
-  - [ ] Tests in `tests/test_cli.py`
+- [x] **Step 6: CLI (`__main__.py`)**
+  - [x] Argument parsing (`scan <paths>`, `--format`, `--config`, `--fail-on`, `--output`, `--baseline`, `--repository`)
+  - [x] Baseline matching and generation
+  - [x] Tests in `tests/test_cli.py`
 - [ ] **Step 7: Public API (`api.py` & `__init__.py`)**
   - [ ] Typed `analyze_path()`, `analyze_text()`, `to_events()`
   - [ ] Re-export public surface in `security/workflow/__init__.py`
