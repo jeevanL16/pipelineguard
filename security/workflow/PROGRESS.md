@@ -30,8 +30,8 @@
   - [x] `security/workflow/labs/vulnerable/` (realistic workflows triggering PG-WF-001..023)
   - [x] `security/workflow/labs/vulnerable/expected.json`
   - [x] `security/workflow/labs/secure/` (hardened workflows with zero findings)
-- [ ] **Step 6: Labs Integration Test**
-  - [ ] `security/workflow/tests/test_labs.py`
+- [x] **Step 6: Labs Integration Test**
+  - [x] `security/workflow/tests/test_labs.py`
 - [ ] **Step 7: Quality Gate**
   - [ ] `pytest -v --cov=security.workflow --cov-report=term-missing` (all pass, coverage >= 90%)
   - [ ] `ruff check security/workflow` (0 errors)
