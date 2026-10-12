@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   Activity,
@@ -39,6 +39,7 @@ import {
 } from "recharts";
 
 import "./App.css";
+import { getBackendHealth, getPipelines, getRuns } from "./services/api";
 
 /* =========================================================
    MOCK DATA
@@ -346,7 +347,7 @@ function StatusBadge({ children, type = "neutral" }) {
    OVERVIEW
 ========================================================= */
 
-function OverviewPage({ onNavigate }) {
+function OverviewPage({ onNavigate, pipelines, pipelineLoading, pipelineError }) {
   return (
     <>
       <section className="metrics-grid">
@@ -541,28 +542,37 @@ function OverviewPage({ onNavigate }) {
           </button>
         </div>
 
-        <div className="pipeline-grid">
-          {pipelines.map((pipeline) => (
-            <div className="pipeline-card" key={pipeline.name}>
-              <div className="pipeline-icon">
-                <GitBranch size={14} />
-              </div>
+        {pipelineLoading ? (
+          <p>Loading pipelines from database...</p>
+        ) : pipelineError ? (
+          <p role="alert">Unable to load database pipelines: {pipelineError}</p>
+        ) : pipelines.length === 0 ? (
+          <p>No pipelines found in the database.</p>
+        ) : (
+          <div className="pipeline-grid">
+            {pipelines.map((pipeline) => (
+              <div className="pipeline-card" key={pipeline.pipeline_id}>
+                <div className="pipeline-icon">
+                  <GitBranch size={14} />
+                </div>
 
-              <div className="pipeline-info">
-                <strong>{pipeline.name}</strong>
-                <span>
-                  <GitBranch size={9} />
-                  {pipeline.branch}
-                </span>
-              </div>
+                <div className="pipeline-info">
+                  <strong>{pipeline.name}</strong>
+                  <span>
+                    <GitBranch size={9} />
+                    {pipeline.branch || "No branch specified"}
+                  </span>
+                  <span>{pipeline.pipeline_id}</span>
+                </div>
 
-              <div className="pipeline-status">
-                <span className={`status-dot ${pipeline.status}`} />
-                {pipeline.status}
+                <div className="pipeline-status">
+                  <span className={`status-dot ${pipeline.status?.toUpperCase() === "ACTIVE" ? "healthy" : pipeline.status?.toLowerCase()}`} />
+                  {pipeline.status}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="panel">
@@ -911,7 +921,7 @@ function ArtifactsPage() {
    PIPELINES
 ========================================================= */
 
-function PipelinesPage({ onNavigate }) {
+function PipelinesPage({ onNavigate, pipelines, pipelineLoading, pipelineError }) {
   return (
     <section className="panel">
       <PageHeader
@@ -920,35 +930,43 @@ function PipelinesPage({ onNavigate }) {
         description="Monitored CI/CD pipelines and their current security state."
       />
 
-      <div className="pipeline-large-grid">
-        {pipelines.map((pipeline) => (
-          <button
-            className="pipeline-large-card"
-            key={pipeline.name}
-            onClick={() => onNavigate("Runs")}
-          >
-            <div className="pipeline-large-header">
-              <div className="pipeline-icon">
-                <GitBranch size={15} />
+      {pipelineLoading ? (
+        <p>Loading pipelines from database...</p>
+      ) : pipelineError ? (
+        <p role="alert">Unable to load database pipelines: {pipelineError}</p>
+      ) : pipelines.length === 0 ? (
+        <p>No pipelines found in the database.</p>
+      ) : (
+        <div className="pipeline-large-grid">
+          {pipelines.map((pipeline) => (
+            <button
+              className="pipeline-large-card"
+              key={pipeline.pipeline_id}
+              onClick={() => onNavigate("Runs")}
+            >
+              <div className="pipeline-large-header">
+                <div className="pipeline-icon">
+                  <GitBranch size={15} />
+                </div>
+
+                <span className={`status-dot ${pipeline.status?.toUpperCase() === "ACTIVE" ? "healthy" : pipeline.status?.toLowerCase()}`} />
               </div>
 
-              <span className={`status-dot ${pipeline.status}`} />
-            </div>
+              <strong>{pipeline.name}</strong>
 
-            <strong>{pipeline.name}</strong>
+              <span className="branch-label">
+                <GitBranch size={10} />
+                {pipeline.branch || "No branch specified"}
+              </span>
 
-            <span className="branch-label">
-              <GitBranch size={10} />
-              {pipeline.branch}
-            </span>
-
-            <div className="pipeline-large-footer">
-              <span>{pipeline.duration}</span>
-              <span>{pipeline.lastRun}</span>
-            </div>
-          </button>
-        ))}
-      </div>
+              <div className="pipeline-large-footer">
+                <span>{pipeline.pipeline_id}</span>
+                <span>{pipeline.status}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -957,7 +975,14 @@ function PipelinesPage({ onNavigate }) {
    RUNS
 ========================================================= */
 
-function RunsPage() {
+function RunsPage({ runs, loading, error }) {
+  const formatDate = (value) => {
+    if (!value) return "—";
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+  };
+
   return (
     <section className="panel">
       <PageHeader
@@ -966,191 +991,52 @@ function RunsPage() {
         description="Recent CI/CD executions and security outcomes."
       />
 
-      <div className="table">
-        <div className="table-head">
-          <span>RUN</span>
-          <span>PIPELINE</span>
-          <span>BRANCH</span>
-          <span>DURATION</span>
-          <span>STATUS</span>
-        </div>
-
-        {runs.map((run) => (
-          <div className="table-row" key={run.id}>
-            <div>
-              <strong>{run.id}</strong>
-              <small>{run.time}</small>
-            </div>
-
-            <span>{run.pipeline}</span>
-
-            <code>{run.branch}</code>
-
-            <span>{run.duration}</span>
-
-            <StatusBadge type={run.status === "BLOCKED" ? "danger" : "success"}>
-              {run.status}
-            </StatusBadge>
+      {loading ? (
+        <p>Loading runs from database...</p>
+      ) : error ? (
+        <p role="alert">Unable to load pipeline runs: {error}</p>
+      ) : runs.length === 0 ? (
+        <p>No pipeline runs found in the database.</p>
+      ) : (
+        <div className="table">
+          <div className="table-head">
+            <span>RUN</span>
+            <span>PIPELINE ID</span>
+            <span>BRANCH</span>
+            <span>STARTED</span>
+            <span>STATUS</span>
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
-/* =========================================================
-   INCIDENTS
-========================================================= */
+          {runs.map((run) => {
+            const status = (run.status || "UNKNOWN").toUpperCase();
+            const badgeType =
+              status === "BLOCKED" || status === "FAILED"
+                ? "danger"
+                : status === "RUNNING"
+                  ? "warning"
+                  : "success";
 
-function IncidentsPage() {
-  const [selected, setSelected] = useState(null);
-  const [blocked, setBlocked] = useState(
-    new Set(incidents.filter((i) => i.status === "BLOCKED").map((i) => i.id))
-  );
-
-  const handleBlock = (incident) => {
-    setBlocked((current) => {
-      const next = new Set(current);
-      next.add(incident.id);
-      return next;
-    });
-  };
-
-  return (
-    <section className="panel">
-      <PageHeader
-        eyebrow="RESPONSE CENTER"
-        title="Incidents"
-        description="Investigate threats and execute automated response actions."
-      />
-
-      <div className="incident-layout">
-        <div className="incident-list">
-          {incidents.map((incident) => (
-            <button
-              key={incident.id}
-              className={`incident-card ${
-                selected?.id === incident.id ? "selected" : ""
-              }`}
-              onClick={() => setSelected(incident)}
-            >
-              <div className={`threat-severity ${incident.severity}`}>
-                <SeverityIcon severity={incident.severity} />
-              </div>
-
-              <div>
-                <strong>{incident.title}</strong>
-                <span>
-                  {incident.id} · {incident.source}
-                </span>
-              </div>
-
-              <strong className="incident-risk">{incident.risk}</strong>
-            </button>
-          ))}
-        </div>
-
-        <div className="incident-detail">
-          {selected ? (
-            <>
-              <div className="detail-header">
+            return (
+              <div className="table-row" key={run.run_id}>
                 <div>
-                  <div className="panel-label">INCIDENT</div>
-                  <h2>{selected.title}</h2>
-                  <span>
-                    {selected.id} · {selected.source}
-                  </span>
+                  <strong>{run.run_id}</strong>
+                  <small>{formatDate(run.created_at)}</small>
                 </div>
 
-                <button
-                  className="icon-button"
-                  onClick={() => setSelected(null)}
-                >
-                  <X size={15} />
-                </button>
-              </div>
+                <span>{run.pipeline_id}</span>
 
-              <div className="detail-risk">
-                <span>RISK SCORE</span>
-                <strong>{selected.risk}/100</strong>
-              </div>
+                <code>{run.branch || "—"}</code>
 
-              <div className="detail-block">
-                <span>DESCRIPTION</span>
-                <p>{selected.description}</p>
-              </div>
+                <span>{formatDate(run.started_at)}</span>
 
-              <div className="detail-block">
-                <span>RESPONSE STATUS</span>
-                <StatusBadge
-                  type={blocked.has(selected.id) ? "danger" : "warning"}
-                >
-                  {blocked.has(selected.id) ? "PIPELINE BLOCKED" : selected.status}
+                <StatusBadge type={badgeType}>
+                  {status}
                 </StatusBadge>
               </div>
-
-              <div className="detail-actions">
-                <button
-                  className="danger-button"
-                  onClick={() => handleBlock(selected)}
-                >
-                  <Ban size={14} />
-                  Block Pipeline
-                </button>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => setSelected(null)}
-                >
-                  <CheckCircle2 size={14} />
-                  Mark Reviewed
-                </button>
-              </div>
-            </>
-          ) : (
-            <EmptyState
-              icon={ShieldAlert}
-              title="Select an incident"
-              description="Choose an incident from the response queue to inspect its details."
-            />
-          )}
+            );
+          })}
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
-   AUDIT LOG
-========================================================= */
-
-function AuditLogPage() {
-  return (
-    <section className="panel">
-      <PageHeader
-        eyebrow="SYSTEM FORENSICS"
-        title="Audit Log"
-        description="Immutable record of PipelineGuard security actions."
-      />
-
-      <div className="audit-list">
-        {auditEvents.map((event, index) => (
-          <div className="audit-row" key={`${event.action}-${index}`}>
-            <div className="audit-icon">
-              <FileClock size={15} />
-            </div>
-
-            <div className="audit-main">
-              <strong>{event.action}</strong>
-              <span>
-                {event.actor} → {event.target}
-              </span>
-            </div>
-
-            <time>{event.time}</time>
-          </div>
-        ))}
-      </div>
+      )}
     </section>
   );
 }
@@ -1243,6 +1129,79 @@ export default function App() {
   const [activePage, setActivePage] = useState("Overview");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+const [backendStatus, setBackendStatus] = useState("CONNECTING");
+  const [dbPipelines, setDbPipelines] = useState([]);
+  const [pipelineLoading, setPipelineLoading] = useState(true);
+  const [pipelineError, setPipelineError] = useState("");
+  const [dbRuns, setDbRuns] = useState([]);
+  const [runsLoading, setRunsLoading] = useState(true);
+  const [runsError, setRunsError] = useState("");
+
+  useEffect(() => {
+    getBackendHealth()
+      .then(() => {
+        setBackendStatus("CONNECTED");
+      })
+      .catch(() => {
+        setBackendStatus("OFFLINE");
+      });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getPipelines()
+      .then((data) => {
+        if (!cancelled) {
+          setDbPipelines(data);
+          setPipelineError("");
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPipelineError(error.message || "Unable to load pipelines");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setPipelineLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getRuns()
+      .then((data) => {
+        if (!cancelled) {
+          setDbRuns(data);
+          setRunsError("");
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setRunsError(
+            error.message || "Unable to load pipeline runs"
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setRunsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   const handleNavigation = (page) => {
     setActivePage(page);
@@ -1298,10 +1257,10 @@ export default function App() {
         return <ArtifactsPage />;
 
       case "Pipelines":
-        return <PipelinesPage onNavigate={handleNavigation} />;
+        return <PipelinesPage onNavigate={handleNavigation} pipelines={dbPipelines} pipelineLoading={pipelineLoading} pipelineError={pipelineError} />;
 
       case "Runs":
-        return <RunsPage />;
+        return <RunsPage runs={dbRuns} loading={runsLoading} error={runsError} />;
 
       case "Incidents":
         return <IncidentsPage />;
@@ -1314,7 +1273,7 @@ export default function App() {
 
       case "Overview":
       default:
-        return <OverviewPage onNavigate={handleNavigation} />;
+        return <OverviewPage onNavigate={handleNavigation} pipelines={dbPipelines} pipelineLoading={pipelineLoading} pipelineError={pipelineError} />;
     }
   };
 
