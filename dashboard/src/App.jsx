@@ -39,7 +39,12 @@ import {
 } from "recharts";
 
 import "./App.css";
-import { getBackendHealth, getPipelines, getRuns } from "./services/api";
+import {
+  getBackendHealth,
+  getPipelines,
+  getRuns,
+  getSecurityEvents,
+} from "./services/api";
 
 /* =========================================================
    MOCK DATA
@@ -605,7 +610,60 @@ function OverviewPage({ onNavigate, pipelines, pipelineLoading, pipelineError })
    THREATS
 ========================================================= */
 
-function ThreatsPage({ onNavigate }) {
+
+function ThreatsPage({ onNavigate, events, loading, error }) {
+  const mappedEvents = events.map((event) => {
+    const severity = String(event.severity || "INFO").toLowerCase();
+
+    return {
+      id: event.event_id,
+      severity:
+        severity === "critical" || severity === "high"
+          ? "critical"
+          : severity === "medium" || severity === "warning"
+            ? "warning"
+            : "info",
+      title: String(event.event_type || "Security event").replaceAll("_", " "),
+      source: event.source || "Unknown source",
+      risk: event.risk_score ?? 0,
+      time: event.timestamp
+        ? new Date(event.timestamp).toLocaleString()
+        : "Time unavailable",
+      status: event.status || "OPEN",
+      description: event.description || "No description provided.",
+    };
+  });
+
+  const openEvents = events.filter(
+    (event) =>
+      !["RESOLVED", "CLOSED"].includes(
+        String(event.status || "").toUpperCase()
+      )
+  ).length;
+
+  const criticalEvents = events.filter((event) =>
+    ["CRITICAL", "HIGH"].includes(
+      String(event.severity || "").toUpperCase()
+    )
+  ).length;
+
+  const averageRisk = events.length
+    ? Math.round(
+        events.reduce((total, event) => total + (event.risk_score || 0), 0) /
+          events.length
+      )
+    : 0;
+
+  const blockedEvents = events.filter(
+    (event) => String(event.status || "").toUpperCase() === "BLOCKED"
+  ).length;
+
+  const resolvedEvents = events.filter((event) =>
+    ["RESOLVED", "CLOSED"].includes(
+      String(event.status || "").toUpperCase()
+    )
+  ).length;
+
   return (
     <>
       <section className="metrics-grid">
@@ -614,9 +672,11 @@ function ThreatsPage({ onNavigate }) {
             <span>ACTIVE</span>
             <ShieldAlert size={16} />
           </div>
-          <div className="metric-value">07</div>
+          <div className="metric-value">{String(openEvents).padStart(2, "0")}</div>
           <div className="metric-bottom">
-            <span className="critical-text">03 critical</span>
+            <span className="critical-text">
+              {String(criticalEvents).padStart(2, "0")} high/critical
+            </span>
             <span>open threats</span>
           </div>
         </div>
@@ -626,10 +686,10 @@ function ThreatsPage({ onNavigate }) {
             <span>BLOCKED</span>
             <Ban size={16} />
           </div>
-          <div className="metric-value">12</div>
+          <div className="metric-value">{blockedEvents}</div>
           <div className="metric-bottom">
-            <span className="positive">automated</span>
-            <span>responses</span>
+            <span className="positive">recorded</span>
+            <span>blocked events</span>
           </div>
         </div>
 
@@ -638,10 +698,12 @@ function ThreatsPage({ onNavigate }) {
             <span>AVG RISK</span>
             <Activity size={16} />
           </div>
-          <div className="metric-value">76</div>
+          <div className="metric-value">{averageRisk}</div>
           <div className="metric-bottom">
-            <span className="warning-text">HIGH</span>
-            <span>event severity</span>
+            <span className="warning-text">
+              {averageRisk >= 80 ? "CRITICAL" : averageRisk >= 50 ? "HIGH" : "LOW"}
+            </span>
+            <span>event risk</span>
           </div>
         </div>
 
@@ -650,10 +712,10 @@ function ThreatsPage({ onNavigate }) {
             <span>RESOLVED</span>
             <CheckCircle2 size={16} />
           </div>
-          <div className="metric-value">43</div>
+          <div className="metric-value">{resolvedEvents}</div>
           <div className="metric-bottom">
-            <span className="positive">this week</span>
-            <span>incidents</span>
+            <span className="positive">from database</span>
+            <span>resolved events</span>
           </div>
         </div>
       </section>
@@ -663,19 +725,30 @@ function ThreatsPage({ onNavigate }) {
           <div>
             <div className="panel-label">DETECTION FEED</div>
             <h2>Security threats</h2>
-            <p>Click an event to move into incident response.</p>
+            <p>Security events retrieved from the PipelineGuard API.</p>
           </div>
         </div>
 
-        <ThreatList
-          items={incidents}
-          onIncident={() => onNavigate("Incidents")}
-        />
+        {loading && <p>Loading security events...</p>}
+
+        {!loading && error && (
+          <p role="alert">Unable to load security events: {error}</p>
+        )}
+
+        {!loading && !error && mappedEvents.length === 0 && (
+          <p>No security events have been recorded yet.</p>
+        )}
+
+        {!loading && !error && mappedEvents.length > 0 && (
+          <ThreatList
+            items={mappedEvents}
+            onIncident={() => onNavigate("Incidents")}
+          />
+        )}
       </section>
     </>
   );
 }
-
 function ThreatList({ items, onIncident }) {
   return (
     <div className="threat-list">
@@ -1045,6 +1118,80 @@ function RunsPage({ runs, loading, error }) {
    SETTINGS
 ========================================================= */
 
+function IncidentsPage() {
+  const [selectedIncident, setSelectedIncident] = useState(null);
+
+  return (
+    <div className="page-content">
+      <PageHeader
+        eyebrow="RESPONSE CENTER"
+        title="Incidents"
+        description="Review, investigate, and track security incidents."
+      />
+
+      {selectedIncident ? (
+        <section className="panel">
+          <button
+            className="secondary-button"
+            onClick={() => setSelectedIncident(null)}
+          >
+            Back to incidents
+          </button>
+          <h2>{selectedIncident.title}</h2>
+          <p>{selectedIncident.description}</p>
+          <p><strong>ID:</strong> {selectedIncident.id}</p>
+          <p><strong>Source:</strong> {selectedIncident.source}</p>
+          <p><strong>Severity:</strong> {selectedIncident.severity}</p>
+          <p><strong>Risk score:</strong> {selectedIncident.risk}</p>
+          <p><strong>Status:</strong> {selectedIncident.status}</p>
+          <p><strong>Reported:</strong> {selectedIncident.time}</p>
+        </section>
+      ) : (
+        <section className="panel">
+          <h2>Incident queue</h2>
+          <p>Select an incident to inspect its details.</p>
+          <div className="incident-list">
+            {incidents.map((incident) => (
+              <button
+                key={incident.id}
+                type="button"
+                className="incident-row"
+                onClick={() => setSelectedIncident(incident)}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "16px",
+                  width: "100%",
+                  padding: "16px",
+                  marginTop: "10px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  background: "transparent",
+                  color: "inherit",
+                  border: "1px solid var(--border-color, #303030)",
+                  borderRadius: "10px"
+                }}
+              >
+                <span>
+                  <strong>{incident.title}</strong>
+                  <br />
+                  <small>{incident.id} · {incident.source}</small>
+                </span>
+                <span>
+                  <strong>{incident.risk}/100</strong>
+                  <br />
+                  <small>{incident.status}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function SettingsPage() {
   const [settings, setSettings] = useState({
     workflowBlocking: true,
@@ -1137,6 +1284,10 @@ const [backendStatus, setBackendStatus] = useState("CONNECTING");
   const [runsLoading, setRunsLoading] = useState(true);
   const [runsError, setRunsError] = useState("");
 
+const [dbSecurityEvents, setDbSecurityEvents] = useState([]);
+const [securityEventsLoading, setSecurityEventsLoading] = useState(true);
+const [securityEventsError, setSecurityEventsError] = useState("");
+
   useEffect(() => {
     getBackendHealth()
       .then(() => {
@@ -1172,6 +1323,34 @@ const [backendStatus, setBackendStatus] = useState("CONNECTING");
       cancelled = true;
     };
   }, []);
+
+useEffect(() => {
+  let cancelled = false;
+
+  getSecurityEvents()
+    .then((data) => {
+      if (!cancelled) {
+        setDbSecurityEvents(data);
+        setSecurityEventsError("");
+      }
+    })
+    .catch((error) => {
+      if (!cancelled) {
+        setSecurityEventsError(
+          error.message || "Unable to load security events"
+        );
+      }
+    })
+    .finally(() => {
+      if (!cancelled) {
+        setSecurityEventsLoading(false);
+      }
+    });
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
 
   useEffect(() => {
@@ -1245,8 +1424,14 @@ const [backendStatus, setBackendStatus] = useState("CONNECTING");
   const renderPage = () => {
     switch (activePage) {
       case "Threats":
-        return <ThreatsPage onNavigate={handleNavigation} />;
-
+return (
+  <ThreatsPage
+    onNavigate={handleNavigation}
+    events={dbSecurityEvents}
+    loading={securityEventsLoading}
+    error={securityEventsError}
+  />
+);
       case "Workflow Security":
         return <WorkflowSecurityPage />;
 

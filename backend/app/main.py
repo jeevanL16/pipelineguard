@@ -4,8 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.models.pipeline import Pipeline
 from app.models.pipeline_run import PipelineRun
+from app.models.security_event import SecurityEvent
 from app.routes.pipelines import router as pipelines_router
 from app.routes.pipeline_runs import router as pipeline_runs_router
+from app.routes.security_events import router as security_events_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -28,6 +30,7 @@ app.add_middleware(
 
 app.include_router(pipelines_router)
 app.include_router(pipeline_runs_router)
+app.include_router(security_events_router)
 
 
 @app.get("/")
