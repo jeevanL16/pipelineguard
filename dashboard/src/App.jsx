@@ -1118,8 +1118,34 @@ function RunsPage({ runs, loading, error }) {
    SETTINGS
 ========================================================= */
 
-function IncidentsPage() {
+function IncidentsPage({ events = [], loading = false, error = "" }) {
   const [selectedIncident, setSelectedIncident] = useState(null);
+
+  const incidentEvents = events.map((event) => {
+    const rawType = event.event_type || "Security event";
+    const title = rawType
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (character) => character.toUpperCase());
+
+    let reportedTime = "—";
+    if (event.timestamp) {
+      const parsedDate = new Date(event.timestamp);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        reportedTime = parsedDate.toLocaleString();
+      }
+    }
+
+    return {
+      id: event.event_id || "—",
+      title,
+      source: event.source || "Unknown",
+      severity: event.severity || "UNKNOWN",
+      risk: event.risk_score ?? "—",
+      status: event.status || "UNKNOWN",
+      description: event.description || "No description provided.",
+      time: reportedTime,
+    };
+  });
 
   return (
     <div className="page-content">
@@ -1129,9 +1155,20 @@ function IncidentsPage() {
         description="Review, investigate, and track security incidents."
       />
 
-      {selectedIncident ? (
+      {loading ? (
+        <section className="panel">
+          <p>Loading incidents from the backend...</p>
+        </section>
+      ) : error ? (
+        <section className="panel">
+          <h2>Unable to load incidents</h2>
+          <p>{error}</p>
+          <p>Check that the backend is running and the events API is available.</p>
+        </section>
+      ) : selectedIncident ? (
         <section className="panel">
           <button
+            type="button"
             className="secondary-button"
             onClick={() => setSelectedIncident(null)}
           >
@@ -1142,16 +1179,21 @@ function IncidentsPage() {
           <p><strong>ID:</strong> {selectedIncident.id}</p>
           <p><strong>Source:</strong> {selectedIncident.source}</p>
           <p><strong>Severity:</strong> {selectedIncident.severity}</p>
-          <p><strong>Risk score:</strong> {selectedIncident.risk}</p>
+          <p><strong>Risk score:</strong> {selectedIncident.risk}/100</p>
           <p><strong>Status:</strong> {selectedIncident.status}</p>
           <p><strong>Reported:</strong> {selectedIncident.time}</p>
         </section>
       ) : (
         <section className="panel">
           <h2>Incident queue</h2>
-          <p>Select an incident to inspect its details.</p>
+          <p>
+            {incidentEvents.length > 0
+              ? `${incidentEvents.length} security event(s) received from the backend. Select one to inspect its details.`
+              : "No security events have been returned by the backend yet."}
+          </p>
+
           <div className="incident-list">
-            {incidents.map((incident) => (
+            {incidentEvents.map((incident) => (
               <button
                 key={incident.id}
                 type="button"
@@ -1177,6 +1219,8 @@ function IncidentsPage() {
                   <strong>{incident.title}</strong>
                   <br />
                   <small>{incident.id} · {incident.source}</small>
+                  <br />
+                  <small>{incident.severity}</small>
                 </span>
                 <span>
                   <strong>{incident.risk}/100</strong>
@@ -1448,7 +1492,13 @@ return (
         return <RunsPage runs={dbRuns} loading={runsLoading} error={runsError} />;
 
       case "Incidents":
-        return <IncidentsPage />;
+        return (
+          <IncidentsPage
+            events={dbSecurityEvents}
+            loading={securityEventsLoading}
+            error={securityEventsError}
+          />
+        );
 
       case "Audit Log":
         return <AuditLogPage />;
