@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from app.database import get_db
 from app.models.security_event import SecurityEvent
@@ -43,6 +44,58 @@ def create_event(
 
     event = SecurityEvent(**event_data.model_dump())
     db.add(event)
+
+    try:
+        db.commit()
+        db.refresh(event)
+    except Exception:
+        db.rollback()
+        raise
+
+    return event
+
+
+
+class SecurityEventStatusUpdate(BaseModel):
+    status: str
+
+
+@router.patch("/{event_id}/status", response_model=SecurityEventResponse)
+def update_event_status(
+    event_id: str,
+    status_data: SecurityEventStatusUpdate,
+    db: Session = Depends(get_db),
+):
+    allowed_statuses = {
+        "OPEN",
+        "INVESTIGATING",
+        "RESOLVED",
+        "FALSE_POSITIVE",
+    }
+
+    new_status = status_data.status
+    if new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "message": "Invalid status",
+                "allowed_statuses": sorted(allowed_statuses),
+            },
+        )
+
+    event = (
+        db.query(SecurityEvent)
+        .filter(SecurityEvent.event_id == event_id)
+        .first()
+    )
+
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Security event not found",
+        )
+
+    event.status = new_status
 
     try:
         db.commit()
