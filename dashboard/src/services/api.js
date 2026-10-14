@@ -49,3 +49,27 @@ export async function getSecurityEvents() {
 
   return response.json();
 }
+
+export async function updateSecurityEventStatus(eventId, newStatus) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/events/${encodeURIComponent(eventId)}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: newStatus }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.detail?.message ||
+      errorData.detail ||
+      `Failed to update incident status: ${response.status}`
+    );
+  }
+
+  return response.json();
+}

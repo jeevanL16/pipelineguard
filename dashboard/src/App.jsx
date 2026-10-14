@@ -44,6 +44,7 @@ import {
   getPipelines,
   getRuns,
   getSecurityEvents,
+  updateSecurityEventStatus,
 } from "./services/api";
 
 /* =========================================================
@@ -1118,8 +1119,17 @@ function RunsPage({ runs, loading, error }) {
    SETTINGS
 ========================================================= */
 
-function IncidentsPage({ events = [], loading = false, error = "" }) {
+function IncidentsPage({
+  events = [],
+  loading = false,
+  error = "",
+  onStatusUpdated,
+}) {
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState("");
+  const [statusSuccess, setStatusSuccess] = useState("");
 
   const incidentEvents = events.map((event) => {
     const rawType = event.event_type || "Security event";
@@ -1182,6 +1192,90 @@ function IncidentsPage({ events = [], loading = false, error = "" }) {
           <p><strong>Risk score:</strong> {selectedIncident.risk}/100</p>
           <p><strong>Status:</strong> {selectedIncident.status}</p>
           <p><strong>Reported:</strong> {selectedIncident.time}</p>
+
+          <div style={{ marginTop: "20px", maxWidth: "360px" }}>
+            <label htmlFor="incident-status">
+              <strong>Update incident status</strong>
+            </label>
+            <select
+              id="incident-status"
+              value={newStatus || selectedIncident.status}
+              onChange={(event) => {
+                setNewStatus(event.target.value);
+                setStatusError("");
+                setStatusSuccess("");
+              }}
+              disabled={statusSaving}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "10px",
+                marginTop: "8px",
+                background: "var(--panel-background, #171717)",
+                color: "inherit",
+                border: "1px solid var(--border-color, #303030)",
+                borderRadius: "8px",
+              }}
+            >
+              <option value="OPEN">OPEN</option>
+              <option value="INVESTIGATING">INVESTIGATING</option>
+              <option value="RESOLVED">RESOLVED</option>
+              <option value="FALSE_POSITIVE">FALSE_POSITIVE</option>
+            </select>
+
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={
+                statusSaving ||
+                !(newStatus || selectedIncident.status) ||
+                (newStatus || selectedIncident.status) === selectedIncident.status
+              }
+              onClick={async () => {
+                const targetStatus = newStatus || selectedIncident.status;
+                setStatusSaving(true);
+                setStatusError("");
+                setStatusSuccess("");
+
+                try {
+                  const updated = await updateSecurityEventStatus(
+                    selectedIncident.id,
+                    targetStatus
+                  );
+                  setSelectedIncident((current) =>
+                    current && current.id === updated.event_id
+                      ? { ...current, status: updated.status }
+                      : current
+                  );
+                  setNewStatus("");
+                  setStatusSuccess("Incident status updated successfully.");
+                  if (onStatusUpdated) {
+                    await onStatusUpdated();
+                  }
+                } catch (updateError) {
+                  setStatusError(
+                    updateError.message || "Unable to update incident status."
+                  );
+                } finally {
+                  setStatusSaving(false);
+                }
+              }}
+              style={{ marginTop: "10px" }}
+            >
+              {statusSaving ? "Saving..." : "Save status"}
+            </button>
+
+            {statusError && (
+              <p role="alert" style={{ color: "#f87171" }}>
+                {statusError}
+              </p>
+            )}
+            {statusSuccess && (
+              <p role="status" style={{ color: "#4ade80" }}>
+                {statusSuccess}
+              </p>
+            )}
+          </div>
         </section>
       ) : (
         <section className="panel">
@@ -1368,6 +1462,19 @@ const [securityEventsError, setSecurityEventsError] = useState("");
     };
   }, []);
 
+const refreshSecurityEvents = async () => {
+  try {
+    const data = await getSecurityEvents();
+    setDbSecurityEvents(data);
+    setSecurityEventsError("");
+  } catch (error) {
+    setSecurityEventsError(
+      error.message || "Unable to refresh security events"
+    );
+    throw error;
+  }
+};
+
 useEffect(() => {
   let cancelled = false;
 
@@ -1497,6 +1604,7 @@ return (
             events={dbSecurityEvents}
             loading={securityEventsLoading}
             error={securityEventsError}
+            onStatusUpdated={refreshSecurityEvents}
           />
         );
 
