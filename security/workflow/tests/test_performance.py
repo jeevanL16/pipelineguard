@@ -109,11 +109,11 @@ jobs:
 """,
 ]
 
-_BUDGET_SEC: float = 15.0  # Measured baseline ~3.5s-6.0s + 2.5x margin for slow/virtualized CI
+_BUDGET_SEC: float = 30.0  # Measured baseline ~3.5s-6.0s; accommodates pytest coverage instrumentation and slower CI/virtualized filesystems
 _MAX_SCALING_RATIO: float = 3.0  # 2x input (1000 vs 500) must scale under 3.0x time
 
 
-@pytest.mark.timeout(45)
+@pytest.mark.timeout(60)
 def test_thousand_workflow_performance_and_scaling(tmp_path: Path) -> None:
     """Scan 1,000 generated workflows, asserting time budget and linear-ish scaling."""
     dir_500 = tmp_path / "batch_500"

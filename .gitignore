@@ -1,10 +1,44 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Testing, benchmarks and coverage
 .pytest_cache/
-gitleaks-report.json
-.mypy_cache/
-.ruff_cache/
-.venv/
 .coverage
 .coverage.*
+coverage.xml
 htmlcov/
+.hypothesis/
+.benchmarks/
+
+# Type checking and linting
+.mypy_cache/
+.ruff_cache/
+
+# Scan reports and output artifacts
+gitleaks-report.json
+*.sarif
+pipelineguard.sarif
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+

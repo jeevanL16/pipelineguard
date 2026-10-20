@@ -17,16 +17,17 @@ import security.workflow.reporter
 import security.workflow.rules
 
 
-def test_namespace_package_has_no_security_init() -> None:
-    """`security/` stays a namespace package so Member 2's tree can merge cleanly."""
+def test_security_package_has_init() -> None:
+    """``security/`` is a proper package with ``__init__.py`` for mypy --strict compatibility."""
     import pathlib
 
     import security
 
-    security_dir = pathlib.Path(security.__file__).parent if getattr(security, "__file__", None) else None
-    # Namespace packages typically have __file__ is None.
-    assert getattr(security, "__file__", None) is None
-    assert security_dir is None
+    # security is a regular package with __init__.py
+    assert getattr(security, "__file__", None) is not None
+    security_init = pathlib.Path(security.__file__)
+    assert security_init.name == "__init__.py"
+    assert security_init.exists()
 
 
 def test_workflow_package_imports() -> None:

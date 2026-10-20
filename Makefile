@@ -6,7 +6,7 @@ lint:
 	ruff check security
 
 typecheck:
-	python -m mypy --strict -p security.workflow
+	python -m mypy --strict security
 
 audit:
 	bandit -r security -x security/workflow/tests

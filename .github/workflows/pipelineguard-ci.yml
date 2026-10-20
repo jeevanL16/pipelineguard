@@ -40,7 +40,7 @@ jobs:
         run: ruff check security
 
       - name: Run Mypy strict type checking
-        run: python -m mypy --strict -p security.workflow
+        run: python -m mypy --strict security
 
       - name: Run Bandit security scanner
         run: bandit -r security -x security/workflow/tests
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      # pipelineguard:ignore PG-WF-005: GitHub Code Scanning upload requires security-events: write scope
+      # pipelineguard-ignore: PG-WF-005 GitHub Code Scanning upload requires security-events: write scope
       security-events: write
       contents: read
     steps:

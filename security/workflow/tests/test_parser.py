@@ -286,3 +286,19 @@ def test_parser_does_not_use_unsafe_yaml_loaders() -> None:
     assert "FullLoader" not in source
     assert "UnsafeLoader" not in source
     assert "yaml.load(" not in source
+
+
+def test_step_and_job_helper_properties() -> None:
+    parsed = parse_workflow_text(VALID_WORKFLOW)
+    assert parsed.ok and parsed.workflow is not None
+    job = parsed.workflow.jobs[0]
+    assert job.is_reusable_workflow is False
+
+    step0 = job.steps[0]
+    assert step0.is_action is True
+    assert step0.is_run is False
+
+    step1 = job.steps[1]
+    assert step1.is_action is False
+    assert step1.is_run is True
+

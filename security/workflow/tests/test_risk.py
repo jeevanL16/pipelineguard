@@ -131,6 +131,23 @@ class TestTriggerExposure:
         list_risk = calculate_risk([finding], triggers=["pull_request_target"])
         assert model_risk.score == list_risk.score
 
+    def test_workflow_trigger_edge_cases(self) -> None:
+        finding = _make_finding("PG-WF-001")
+        # on is None
+        wf_none = Workflow("c.yml", "C", None, None, {}, [], [])
+        assert calculate_risk([finding], triggers=wf_none).score > 0
+
+        # on is single string
+        wf_str = Workflow("c.yml", "C", "pull_request_target", None, {}, [], [])
+        assert calculate_risk([finding], triggers=wf_str).score == calculate_risk([finding], triggers=["pull_request_target"]).score
+
+        # on is unexpected type (e.g. int)
+        wf_int = Workflow("c.yml", "C", 12345, None, {}, [], [])
+        assert calculate_risk([finding], triggers=wf_int).score > 0
+
+        # triggers is None directly
+        assert calculate_risk([finding], triggers=None).score > 0
+
 
 class TestConfidenceImpact:
     def test_higher_confidence_yields_greater_or_equal_risk(self) -> None:

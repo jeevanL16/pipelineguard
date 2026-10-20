@@ -22,7 +22,7 @@ from security.workflow.models import ParseResult, Workflow
 from security.workflow.parser import parse_workflow_text
 
 _SUPPRESSION_DIRECTIVE_RE = re.compile(
-    r"#\s*pipelineguard-ignore:\s*([A-Za-z0-9_-]+)(?:\s+([^\n\r#]+))?",
+    r"#\s*pipelineguard[-:]ignore:?\s*([A-Za-z0-9_-]+)(?:\s*:?\s*([^\n\r#]+))?",
     re.IGNORECASE,
 )
 
@@ -118,7 +118,7 @@ def check_suppression(
             if matched_rule == rule_id.upper():
                 found_directive = True
                 raw_reason = match.group(2)
-                reason = raw_reason.strip() if raw_reason else None
+                reason = raw_reason.lstrip(": ").strip() if raw_reason else None
                 if reason:
                     return True, reason
 
@@ -243,18 +243,28 @@ def analyze_workflow(
                 raw_text = p.read_text(encoding="utf-8", errors="replace")
         except OSError:
             raw_text = None
-    lines = raw_text.splitlines() if raw_text is not None else []
-
     active_findings: list[Finding] = []
     suppressed_findings: list[SuppressedFinding] = []
 
-    for f in deduped_findings:
-        matched, reason = check_suppression(lines, f.line, f.rule_id, snippet=f.snippet)
-        if matched and reason:
-            suppressed_findings.append(SuppressedFinding(finding=f, reason=reason))
-        else:
-            # If suppression matched but reason was missing, it is rejected and reported
-            active_findings.append(f)
+    has_directive = bool(
+        raw_text
+        and (
+            "pipelineguard-ignore" in raw_text.lower()
+            or "pipelineguard:ignore" in raw_text.lower()
+        )
+    )
+
+    if not has_directive or not deduped_findings:
+        active_findings = list(deduped_findings)
+    else:
+        lines = raw_text.splitlines() if raw_text is not None else []
+        for f in deduped_findings:
+            matched, reason = check_suppression(lines, f.line, f.rule_id, snippet=f.snippet)
+            if matched and reason:
+                suppressed_findings.append(SuppressedFinding(finding=f, reason=reason))
+            else:
+                # If suppression matched but reason was missing, it is rejected and reported
+                active_findings.append(f)
 
     # Deterministic stable sorting
     active_findings.sort(key=lambda f: (f.sort_key(), f.fingerprint()))

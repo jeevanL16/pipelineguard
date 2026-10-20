@@ -9,7 +9,7 @@ echo -e "\n[1/5] Running Ruff Linter..."
 ruff check security
 
 echo -e "\n[2/5] Running Mypy Strict Type Checking..."
-python -m mypy --strict -p security.workflow
+python -m mypy --strict security
 
 echo -e "\n[3/5] Running Bandit Security Audit..."
 bandit -r security -x security/workflow/tests

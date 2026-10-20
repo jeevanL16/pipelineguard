@@ -366,9 +366,9 @@ _RULES: Final[list[Rule]] = [
     # ------------------------------------------------------------------
     Rule(
         id="PG-WF-012",
-        title="HTTP download from raw IP address",
+        title="Download from raw IP address",
         description=(
-            "A run: step downloads a resource from a raw IP address over HTTP, "
+            "A run: step downloads a resource from a raw IP address (over HTTP or HTTPS), "
             "bypassing DNS-based controls and TLS hostname verification.  This is a "
             "common indicator of command-and-control or exfiltration."
         ),

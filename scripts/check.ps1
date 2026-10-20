@@ -10,7 +10,7 @@ ruff check security
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "`n[2/5] Running Mypy Strict Type Checking..." -ForegroundColor Yellow
-python -m mypy --strict -p security.workflow
+python -m mypy --strict security
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host "`n[3/5] Running Bandit Security Audit..." -ForegroundColor Yellow

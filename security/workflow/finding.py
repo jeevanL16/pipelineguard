@@ -186,12 +186,18 @@ class Finding:
         Returns:
             A 64-character lowercase hex string.
         """
+        cached: str | None = getattr(self, "_cached_fp", None)
+        if cached is not None:
+            return cached
+
         norm_file = self.file.replace("\\", "/").lower()
         norm_line = str(self.line) if self.line is not None else "none"
         norm_snippet = re.sub(r"\s+", " ", self.snippet.lower()).strip()
 
         payload = f"{self.rule_id}\x00{norm_file}\x00{norm_line}\x00{norm_snippet}"
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        object.__setattr__(self, "_cached_fp", digest)
+        return digest
 
     # ------------------------------------------------------------------
     # Sorting key (for stable output)

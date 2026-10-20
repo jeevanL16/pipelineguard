@@ -29,6 +29,16 @@ class Step:
     expressions: list[Expression] = field(default_factory=list)
     with_inputs: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def is_action(self) -> bool:
+        """Return True if this step executes an action via 'uses:'."""
+        return self.uses is not None
+
+    @property
+    def is_run(self) -> bool:
+        """Return True if this step executes shell commands via 'run:'."""
+        return self.run is not None
+
 
 @dataclass
 class Job:
@@ -42,6 +52,11 @@ class Job:
     expressions: list[Expression] = field(default_factory=list)
     secrets: Any = None
     uses: str | None = None
+
+    @property
+    def is_reusable_workflow(self) -> bool:
+        """Return True if this job calls a reusable workflow via 'uses:'."""
+        return self.uses is not None
 
 
 @dataclass
