@@ -80,7 +80,7 @@ jobs:
           python -m security.workflow scan .github/workflows --fail-on warn --format sarif --output pipelineguard.sarif
 
       - name: Upload PipelineGuard SARIF report
-        uses: github/codeql-action/upload-sarif@ff0a06b0c1483ef5187f3bbb210e7109bfeb8741 # v3
+        uses: github/codeql-action/upload-sarif@ce5e7eeac396d720fe2d802714996c8ce561e311 # v3
         if: always()
         with:
           sarif_file: pipelineguard.sarif
