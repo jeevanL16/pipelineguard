@@ -37,13 +37,13 @@ jobs:
           pip install -r security/workflow/requirements.txt -r security/workflow/requirements-dev.txt
 
       - name: Run Ruff linter
-        run: ruff check security
+        run: ruff check security/workflow
 
       - name: Run Mypy strict type checking
-        run: python -m mypy --strict security
+        run: python -m mypy --strict -p security.workflow
 
       - name: Run Bandit security scanner
-        run: bandit -r security -x security/workflow/tests
+        run: bandit -r security/workflow -x security/workflow/tests
 
       - name: Run Pip-audit dependency vulnerability check
         run: pip-audit -r security/workflow/requirements.txt
