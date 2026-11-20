@@ -21,17 +21,31 @@ gitleaks-report.json
 *.sarif
 pipelineguard.sarif
 
-# Environments
+# Environments and secrets
 .venv/
 venv/
 env/
 ENV/
+.env
+.env.*
+!.env.example
+backend/.env
 
 # Build and packaging
 build/
 dist/
 *.egg-info/
 *.egg
+
+# Frontend dependencies and generated builds
+node_modules/
+dashboard/dist/
+
+# Temporary and backup files
+*.bak
+*.pre-auth.bak
+*.before-auth-integration.bak
+*.bundle
 
 # Editor and OS files
 .vscode/
@@ -41,4 +55,3 @@ dist/
 *~
 .DS_Store
 Thumbs.db
-
