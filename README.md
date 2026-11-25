@@ -1,251 +1,178 @@
+<div align="center">
+
+<img src="dashboard/public/favicon.svg" alt="PipelineGuard Gate mark" width="56" height="56" />
+
 # PipelineGuard
 
-### CI/CD Security & Software Supply-Chain Threat Detection Platform
+**Catch risky CI/CD workflow changes, exposed secrets, and tampered build artifacts before they reach production.**
 
-PipelineGuard is a security platform designed to identify, assess, and report threats across CI/CD pipelines and software build artifacts.
+![Python](https://img.shields.io/badge/Python-3.11%2B-0E181D?style=flat-square&logo=python&logoColor=5CC9B0)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-0E181D?style=flat-square&logo=fastapi&logoColor=5CC9B0)
+![React](https://img.shields.io/badge/React-19%20%2B%20Vite%208-0E181D?style=flat-square&logo=react&logoColor=5CC9B0)
+![Rules](https://img.shields.io/badge/Workflow%20Rules-PG--WF--001..023-0E181D?style=flat-square&color=0B6F5F)
+![Workflow Tests](https://img.shields.io/badge/Workflow%20Tests-383%20Passed-0E181D?style=flat-square&color=0B6F5F)
 
-It combines static GitHub Actions workflow analysis, exposed-secret detection, artifact integrity verification, and a centralized security dashboard backed by FastAPI and PostgreSQL.
+[Live Landing & Playground](#-gatehouse-v2-frontend) · [Architecture](#-architecture) · [Security Scanners](#-security-engines) · [Quick Start](#-quick-start) · [API Reference](#-backend-api)
 
-The goal is to help development teams identify dangerous pipeline configurations, prevent credential exposure, detect artifact tampering, and maintain visibility into security events.
+</div>
 
 ---
 
-## Core Capabilities
+## Overview
 
-| Module | Capabilities |
-|---|---|
-| Workflow Security | Static analysis of GitHub Actions workflows, script injection detection, permission analysis, suspicious commands, and supply-chain risks |
-| Secrets Security | Gitleaks-based detection of exposed API keys, tokens, passwords, and private keys |
-| Artifact Security | SHA-256 hashing, trusted hash comparison, and artifact tampering detection |
-| Security Backend | FastAPI REST API, PostgreSQL persistence, JWT dashboard authentication, and scanner-token authentication |
-| Security Dashboard | React-based dashboard for pipelines, workflow threats, security events, runs, and audit logs |
+PipelineGuard secures GitHub Actions pipelines end-to-end across three enforcement layers and one unified triage console:
+
+1. **GitHub Actions Workflow Inspection (`PG-WF-001`–`PG-WF-023` + `PG-WF-900`/`901`)** — Detects script injection via untrusted contexts, `pull_request_target` pwn-request checkouts, `write-all` / missing permissions, unpinned action tags, dangerous shell pipes (`curl | bash`, reverse shells, `eval`, cryptominers), network exfiltration domains, and persistent workflow modifications.
+2. **Secret Leak Protection (`security/secrets`)** — Wraps Gitleaks rules with PipelineGuard's fail-closed severity policy (`private-key`, `aws-access-token`, `github-pat`, `stripe-access-token`, high-entropy API keys) while masking secret bytes before telemetry leaves the runner.
+3. **Artifact Integrity Verification (`security/artifacts`)** — Fail-closed chunked SHA-256 verification against independent expected hashes, generating `CRITICAL` tamper findings on mismatch and verified seals on match.
+4. **Gatehouse (v2) Web Platform (`dashboard/`)** — An evidence-first frontend pairing a public interactive **Landing Page + Browser YAML Playground** (`/`) with an **Operations Dashboard** (`/app/*`) backed by FastAPI + SQLite/PostgreSQL.
+
+---
 
 ## Architecture
 
-```text
-                 CI/CD REPOSITORY
-                        |
-          +-------------+-------------+
-          |             |             |
-          v             v             v
-    WORKFLOW         SECRETS       ARTIFACT
-    SECURITY         SECURITY      SECURITY
-    ANALYZER         GITLEAKS      VERIFIER
-          |             |             |
-          +-------------+-------------+
-                        |
-                SECURITY EVENTS
-                        |
-                        v
-                INTEGRATION LAYER
-                        |
-                 Authenticated API
-                        |
-                        v
-                 FASTAPI BACKEND
-                        |
-                        v
-                   POSTGRESQL
-                        |
-                        v
-                REACT DASHBOARD
-                        |
-                        v
-                SECURITY VISIBILITY
+```mermaid
+flowchart LR
+  Repo["GitHub Repository (.github/workflows/*.yml)"] --> WF["Workflow Engine (PG-WF-001..023)"]
+  Repo --> SEC["Secrets Engine (Gitleaks Policy)"]
+  Art["Build Artifact + Expected Hash"] --> VER["Artifact Verifier (SHA-256)"]
+
+  WF --> INT["Integration Adapters (security/integration)"]
+  SEC --> INT
+  VER --> INT
+
+  INT -->|"Bearer Token HTTP/JSON"| API["FastAPI REST API (backend/app)"]
+  API --> DB[("SQLite / PostgreSQL + AuditLog")]
+
+  API <-->|"TanStack Query + Zod"| UI["Gatehouse Console (/app/*)"]
+  RulesTS["Shared TS Rule Engine (dashboard/src/rules)"] --> Landing["Public Hero Scan & Browser Playground (/)"]
+  RulesTS --> UI
 ```
-
-## Security Modules
-
-### 1. Workflow Security
-
-A static security analyzer and policy gate for GitHub Actions workflow definitions.
-
-Detection capabilities include:
-
-- Script injection through untrusted GitHub context.
-- Excessive or overly broad workflow permissions.
-- Dangerous shell commands and download-to-shell patterns.
-- Reverse-shell and suspicious network activity.
-- Workflow persistence and modification patterns.
-- Unpinned third-party actions and supply-chain risks.
-- Unsafe checkout credential configurations.
-- Workflow parsing and resource-exhaustion protection.
-
-The analyzer includes configurable rules, severity levels, remediation guidance, fingerprint-based deduplication, suppression support, risk scoring, and text, JSON, and SARIF reporting.
-
-**Rule catalog:** PG-WF-001 through PG-WF-023, plus system rules PG-WF-900 and PG-WF-901.
-
-### 2. Secrets Security
-
-Uses [Gitleaks](https://github.com/gitleaks/gitleaks) to scan source code and directories for potentially exposed credentials.
-
-Capabilities include:
-
-- API key and access-token detection.
-- Cloud credential and private-key detection.
-- Password and generic credential classification.
-- PipelineGuard severity mapping.
-- Safe finding output without displaying raw secret values.
-- Structured security-event generation.
-
-Secret values are not included in generated security events.
-
-### 3. Artifact Security
-
-Verifies build artifact integrity using SHA-256.
-
-Capabilities include:
-
-- Chunked SHA-256 hashing.
-- Comparison against trusted expected hashes.
-- Verification using a separate hashes file.
-- PASS/BLOCK decisions.
-- CRITICAL security events when an artifact hash does not match.
-
-Artifact signing and Cosign integration are future enhancements, not current capabilities.
 
 ---
 
-## Technology Stack
+## Gatehouse (v2) Frontend
 
-| Layer | Technologies |
-|---|---|
-| Frontend | React 19, Vite, JavaScript, Recharts, Lucide React |
-| Backend | Python, FastAPI, Pydantic, SQLAlchemy |
-| Database | PostgreSQL, psycopg2 |
-| Authentication | JWT, HTTP Bearer authentication, Argon2 password hashing |
-| Workflow Analysis | Python, PyYAML, custom static-analysis detectors |
-| Secrets Detection | Gitleaks |
-| Artifact Integrity | SHA-256 |
-| Testing | pytest, pytest-cov |
-| Development Environment | Linux, Git, Node.js, npm |
+Designed around [DESIGN.md](./DESIGN.md): dark petrol-slate (`#0E181D`) and cool-paper light (`#F4F7F6`) canvases, **Instrument Sans** + **JetBrains Mono** typography, **one brand color** (Verdigris `#5CC9B0` / `#0B6F5F`), **triple-encoded severities** (distinct 12px SVG shapes + tint + text label), and zero idle animation.
+
+| Surface | Route | Highlights |
+|---|---|---|
+| **Hero Scan Demo & Playground** | `/` | Always-dark YAML panel with WAAPI line-scan cursor, `"Show fix"` diff swap, real browser `crypto.subtle.digest` **`Verified`** SHA-256 Seal, and a Web Worker YAML Playground (`>200` lines) running the shared `PG-WF-*` engine locally. |
+| **Overview** | `/app` | Ranked **"Needs attention"** queue (severity first, then oldest open finding), stacked severity posture bar, plain-text stats, single-series Recharts risk chart with gate threshold, and first-run onboarding when 0 pipelines exist. |
+| **Findings & Evidence Drawer** | `/app/findings` | URL-synced severity/status filter chips, `@tanstack/react-table` sticky headers, `28/36/44px` density persistence, `j`/`k`/`Enter`/`Escape` keyboard nav, slide-out YAML evidence + diff drawer, `useOptimistic` updates inside `startTransition`, and 6-second **Undo** toasts. |
+| **Incidents, Workflows & Secrets** | `/app/incidents`, `/workflows`, `/secrets` | High/critical active triage workspace, full filterable 23-rule catalog, and masked secret findings + Gitleaks severity table. |
+| **Artifacts Verifier** | `/app/artifacts` | Browser-side `crypto.subtle.digest` SHA-256 verifier matching `artifact_verifier.py` (`MATCH · PASS` / `MISMATCH · BLOCK`) with `Verified` Seal and session log. |
+| **Pipelines & Progressive Connect** | `/app/pipelines` | React 19 `useActionState` + Zod Connect Repository form: resolves `/api/repositories/resolve` or GitHub public `.github/workflows`, suggests `pipe-<repo>` + branches, validates blur-first with multi-error focus summaries. |
+| **Runs, Audit log & Settings** | `/app/runs`, `/audit`, `/settings` | Execution telemetry, append-only status transition trail, live `/api/health` + `/api/test` latency table, theme switcher (`System`/`Light`/`Dark`), and optional JWT sign-in. |
+| **Command Palette** | `Ctrl+K` / `⌘K` | `cmdk` dialog searching Recent items, Findings, Pipelines, Pages, and Quick Actions. |
+
+---
+
+## Security Engines
+
+<details>
+<summary><strong>1. Workflow Security Rules (PG-WF-001 to PG-WF-023)</strong> — Click to expand categories</summary>
+
+| Category | Rules | Targets |
+|---|---|---|
+| **Injection** | `PG-WF-001`, `PG-WF-002`, `PG-WF-003` | Untrusted `${{ github.event.* }}` interpolation in `run:`, `actions/github-script`, and `GITHUB_ENV`/`GITHUB_OUTPUT`/`GITHUB_PATH` writes |
+| **Permissions** | `PG-WF-004`, `PG-WF-005`, `PG-WF-006`, `PG-WF-007` | Missing `permissions:`, `write-all` / broad write scopes, `pull_request_target` + head checkout pwn-requests, `secrets: inherit` |
+| **Commands** | `PG-WF-008`–`PG-WF-011`, `PG-WF-021`–`PG-WF-023` | `curl\|bash`, `base64 -d\|sh`, `eval`, reverse shells, echoed secrets / `set -x`, unverified `chmod +x`, cryptominers |
+| **Network** | `PG-WF-012`–`PG-WF-015` | Raw IP downloads, C2/exfiltration webhooks (`ngrok`, `webhook.site`, `pastebin`), plain `http://`, `curl -k`/`--insecure` |
+| **Persistence** | `PG-WF-016`, `PG-WF-017`, `PG-WF-018` | Runtime writes to `.github/workflows/`, `git push` with `GITHUB_TOKEN`, unattended `schedule:` workflows |
+| **Supply Chain** | `PG-WF-019`, `PG-WF-020` | Unpinned mutable tags (`@v3` instead of 40-char SHA), `actions/checkout` without `persist-credentials: false` |
+| **Parser / System** | `PG-WF-900`, `PG-WF-901` | Malformed YAML indentation/structure, file/depth/node limits, isolated detector errors |
+
+</details>
+
+- **Secrets Scanner ([security/secrets/](file:///d:/pipelineguard/security/secrets)):** Maps Gitleaks rule IDs to `CRITICAL` (`private-key`) and `HIGH` (`aws-access-token`, `github-pat`, `github-fine-grained-pat`, `stripe-access-token`, `generic-api-key`) with `BLOCK` enforcement and raw token redaction.
+- **Artifact Verifier ([security/artifacts/](file:///d:/pipelineguard/security/artifacts)):** Constant-time comparison (`hmac.compare_digest`) of calculated SHA-256 digests against trusted external references or `sha256sum` files; emits structured `artifact_tampering` events on mismatch.
 
 ---
 
 ## Project Structure
 
 ```text
-PipelineGuard/
+pipelineguard/
 ├── backend/
 │   ├── app/
-│   │   ├── auth.py
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── schemas/
-│   ├── tests/
+│   │   ├── models/              # Pipeline, PipelineRun, SecurityEvent, AuditLog
+│   │   ├── routes/              # auth, pipelines, pipeline_runs, security_events, audit_logs
+│   │   ├── schemas/             # Pydantic validation schemas
+│   │   ├── auth.py              # JWT + Scanner token + localhost loopback read/dashboard auth
+│   │   ├── config.py            # Environment & settings loader
+│   │   ├── database.py          # SQLAlchemy session (SQLite / PostgreSQL)
+│   │   └── main.py              # FastAPI app & CORS configuration
+│   ├── seed.py                  # Realistic initial telemetry seeder
 │   └── requirements.txt
 │
-├── dashboard/
-│   ├── public/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── App.css
-│   │   └── main.jsx
-│   ├── package.json
-│   └── vite.config.js
+├── dashboard/                   # Gatehouse (v2) React 19 + TypeScript + Vite 8 + Tailwind v4
+│   ├── public/                  # favicon.svg (Gate mark) & favicon-critical.svg
+│   ├── scripts/verifyRules.ts   # Shared client rule engine fixture test suite
+│   └── src/
+│       ├── app/                 # router.tsx (lazy routes), queryClient.ts, theme.tsx
+│       ├── features/            # landing, shell, overview, findings, incidents,
+│       │                        # workflows, secrets, artifacts, pipelines, runs, audit, settings
+│       ├── motion/              # DESIGN.md timing tokens + async LazyMotion domMax provider
+│       ├── rules/               # TypeScript rule engine mirroring security/workflow (24 rules + Worker)
+│       ├── services/api.ts      # Typed API client with latency metrics & repo metadata fallback
+│       ├── styles/tokens.css    # Semantic --pg-* dark & light variables, view() animations
+│       └── ui/                  # Button, Chip, Kbd, Badge, Seal, Field, Select, Panel, CodePanel,
+│                                # Dialog, Drawer, Tabs, Tooltip, ToastProvider, BrandMark
 │
 ├── security/
-│   ├── workflow/
-│   │   ├── detectors/
-│   │   ├── schemas/
-│   │   ├── tests/
-│   │   ├── analyzer.py
-│   │   ├── parser.py
-│   │   ├── rules.py
-│   │   ├── reporter.py
-│   │   └── risk.py
-│   │
-│   ├── secrets/
-│   │   ├── tests/
-│   │   ├── scanner.py
-│   │   ├── events.py
-│   │   └── masking.py
-│   │
-│   ├── artifacts/
-│   │   ├── tests/
-│   │   ├── artifact_cli.py
-│   │   ├── artifact_hashing.py
-│   │   ├── artifact_verifier.py
-│   │   └── artifact_events.py
-│   │
-│   └── integration/
-│       ├── workflow_to_backend.py
-│       └── security_modules_to_backend.py
+│   ├── workflow/                # AST/line-aware YAML parser, 23 rules, 6 detectors, SARIF, risk scoring
+│   ├── secrets/                 # Gitleaks runner, severity policy, secret masking & event builder
+│   ├── artifacts/               # Chunked SHA-256 hasher, fail-closed verifier, tamper events CLI
+│   └── integration/             # Scanners -> FastAPI ingestion adapters
 │
-├── docs/
-├── scripts/
-├── Makefile
-├── pyproject.toml
+├── DESIGN.md                    # PipelineGuard Gatehouse (v2) design specification
+├── GATEHOUSE_CHECKLIST.md       # Stateful frontend execution checklist & handoff record
+├── LIVE_E2E_REPORT.md           # Full live Chrome + API end-to-end verification report
+├── FRONTEND_ARCHITECTURE_REPORT.md
 └── README.md
 ```
 
 ---
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
+- **Python 3.11+**
+- **Node.js 20+** and **npm**
+- **Git** *(optional: PostgreSQL for production DB, Gitleaks CLI for local secret scanning)*
 
-Install the following:
-
-- Python 3.11 or newer.
-- Node.js and npm.
-- PostgreSQL.
-- Gitleaks.
-- Git.
-
-### 1. Clone the repository
+### 1. Clone & Configure Backend
 
 ```bash
-git clone git@github.com:hmvishwasballari-design/PipelineGuard.git
-cd PipelineGuard
+git clone https://github.com/jeevanL16/pipelineguard.git
+cd pipelineguard/backend
 ```
 
-### 2. Configure the backend
+Copy `.env.example` to `.env` (for quick local testing, SQLite works with zero external setup):
 
-Create a virtual environment:
-
-```bash
-cd backend
-
-python -m venv .venv
-source .venv/bin/activate
-
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
 pip install -r requirements.txt
+python seed.py
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-
-Create `backend/.env`:
-
-```env
-DATABASE_URL=postgresql://USERNAME:PASSWORD@localhost:5432/pipelineguard
-
-PIPELINEGUARD_JWT_SECRET=REPLACE_WITH_A_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS
-PIPELINEGUARD_DASHBOARD_USERNAME=admin
-PIPELINEGUARD_DASHBOARD_PASSWORD_HASH=REPLACE_WITH_ARGON2_HASH
-PIPELINEGUARD_SCANNER_API_TOKEN=REPLACE_WITH_A_RANDOM_TOKEN_OF_AT_LEAST_32_CHARACTERS
-PIPELINEGUARD_JWT_EXPIRY_MINUTES=30
-```
-
-Create the PostgreSQL database before starting the backend.
-
-Use securely generated secrets and an Argon2 password hash. Never commit `.env` files or real credentials.
-
-Start the backend:
 
 ```bash
+# macOS / Linux
+cp .env.example .env
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python seed.py
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Backend:
+Backend endpoints are served at `http://127.0.0.1:8000` (OpenAPI Swagger UI at `http://127.0.0.1:8000/docs`).
 
-- API: http://127.0.0.1:8000
-- Swagger documentation: http://127.0.0.1:8000/docs
-- Health check: http://127.0.0.1:8000/api/health
+### 2. Run the Gatehouse Dashboard
 
-### 3. Start the dashboard
-
-Open another terminal:
+In a second terminal from the repository root:
 
 ```bash
 cd dashboard
@@ -253,184 +180,66 @@ npm install
 npm run dev
 ```
 
-Dashboard:
+Open **`http://127.0.0.1:5173/`** for the interactive Landing Page & Playground, or **`http://127.0.0.1:5173/app`** for the Operations Dashboard.
 
-http://127.0.0.1:5173
-
-### 4. Run the security scanners
-
-Run commands from the project root.
-
-**Workflow security:**
+### 3. Run Security CLI Modules
 
 ```bash
+# Scan workflows in this repository
 python -m security.workflow .github/workflows/
-```
 
-**Secrets security:**
-
-```bash
-cd security/secrets
-python scanner.py
-```
-
-**Artifact security:**
-
-```bash
+# Hash and verify a build artifact
 cd security/artifacts
-
-python artifact_cli.py hash PATH_TO_ARTIFACT
-
-python artifact_cli.py verify PATH_TO_ARTIFACT \
-  --expected YOUR_TRUSTED_SHA256_HASH
+python artifact_cli.py hash PATH_TO_FILE
+python artifact_cli.py verify PATH_TO_FILE --expected <64_HEX_SHA256>
 ```
-
-Use a trusted hash obtained independently of the artifact being verified.
 
 ---
 
 ## Backend API
 
-The FastAPI backend exposes the following API groups:
-
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/api/health` | GET | Backend health check |
-| `/api/test` | GET | Frontend/backend connection test |
-| `/api/auth/login` | POST | Dashboard authentication |
-| `/api/pipelines` | GET / POST | Pipeline operations |
-| `/api/pipelines/{pipeline_id}` | GET | Retrieve a pipeline |
-| `/api/runs` | GET / POST | Pipeline run operations |
-| `/api/runs/{run_id}` | GET | Retrieve a pipeline run |
-| `/api/events` | GET / POST | Security event operations |
-| `/api/events/{event_id}/status` | PATCH | Update security event status |
-| `/api/audit-logs` | GET | Retrieve audit history |
+| `/api/health` | `GET` | Service health check |
+| `/api/test` | `GET` | Frontend-to-backend connectivity verification |
+| `/api/auth/login` | `POST` | Exchange dashboard username/password for JWT Bearer token |
+| `/api/pipelines` | `GET` / `POST` | List monitored repositories or register a new pipeline |
+| `/api/pipelines/{pipeline_id}` | `GET` | Fetch single pipeline metadata |
+| `/api/runs` | `GET` / `POST` | List or record pipeline execution telemetry |
+| `/api/events` | `GET` / `POST` | List or ingest security findings |
+| `/api/events/{event_id}/status` | `PATCH` | Transition status (`OPEN`, `INVESTIGATING`, `RESOLVED`, `FALSE_POSITIVE`) + write `AuditLog` |
+| `/api/audit-logs` | `GET` | Retrieve append-only status audit trail |
 
-### Authentication model
-
-- Dashboard authentication uses JWT bearer tokens.
-- Scanner event ingestion uses a dedicated bearer token.
-- Dashboard read endpoints currently use a loopback-address restriction for local development.
-- Event status updates and other write operations remain authenticated.
-
-**Deployment note:** The local-only dashboard read policy is intended for local development. A public deployment requires a properly authenticated and authorized access model, HTTPS, production-grade secret management, and suitable network controls.
+> **Note:** Localhost loopback access simplifies local development evaluation. Before public deployment, disable loopback auto-auth, provision PostgreSQL + strong Argon2/JWT secrets, and enforce HTTPS.
 
 ---
 
-## Integration
+## Verification & Test Suites
 
-The security modules include integration adapters for submitting findings to the FastAPI backend.
+Observed local verification results across backend security modules and frontend builds:
 
-Workflow scan in dry-run mode:
-
-```bash
-python security/integration/workflow_to_backend.py \
-  .github/workflows/
-```
-
-Submit workflow findings:
-
-```bash
-python security/integration/workflow_to_backend.py \
-  .github/workflows/ --submit
-```
-
-Scan for secrets and preview events:
-
-```bash
-python security/integration/security_modules_to_backend.py \
-  secrets .
-```
-
-Submit secrets events:
-
-```bash
-python security/integration/security_modules_to_backend.py \
-  secrets . --submit
-```
-
-Verify an artifact and preview its event:
-
-```bash
-python security/integration/security_modules_to_backend.py \
-  artifact PATH_TO_ARTIFACT \
-  --expected YOUR_TRUSTED_SHA256_HASH
-```
-
-Add `--submit` to submit generated events. Configure the scanner bearer token in the environment before submitting.
+| Suite / Check | Result | Command |
+|---|---|---|
+| **Workflow Security Engine** | `383 passed` | `python -m pytest -q security/workflow/tests --no-cov` |
+| **Secrets Security Policy** | `21 passed, 12 skipped` *(Gitleaks CLI integration skipped when binary absent)* | `python -m pytest -q security/secrets/tests --no-cov` |
+| **Artifact Integrity Verifier** | `69 passed, 1 skipped` | `python -m pytest -q security/artifacts/tests --no-cov` |
+| **FastAPI Backend Smoke** | `2 passed` | `cd backend && python -m pytest -q --no-cov` |
+| **Frontend Typecheck, Lint & Build** | `0 errors` (`vite build` + code-split bundles) | `cd dashboard && npx tsc --noEmit && npm run lint && npm run build` |
+| **Browser Rule Engine Fixtures** | `ALL RULE ENGINE FIXTURE TESTS PASSED` | `npx esbuild scripts/verifyRules.ts --bundle --platform=node --format=esm \| node --input-type=module -` |
+| **Live Chrome E2E & API Walkthrough** | Verified across `/`, `/app/*`, `jeevanL16/eventgenie`, `360px` & Dark/Light | See [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md) |
 
 ---
 
-## Testing
+## Documentation Index
 
-PipelineGuard includes automated tests for the security modules and backend.
-
-Latest verified results:
-
-| Test suite | Result |
-|---|---:|
-| Workflow security | 383 passed |
-| Secrets security | 33 passed |
-| Artifact security | 70 passed |
-| Backend | 2 passed |
-| Workflow coverage | 98.59% |
-
-Run the suites:
-
-```bash
-# Backend
-cd backend
-.venv/bin/python -m pytest -q --no-cov
-
-# Workflow
-cd ..
-python -m pytest -q security/workflow/tests
-
-# Secrets
-python -m pytest -q security/secrets/tests --no-cov
-
-# Artifacts
-python -m pytest -q security/artifacts/tests --no-cov
-```
-
-These are the latest verified local test results, not a claim of a hosted CI run.
+- **[DESIGN.md](./DESIGN.md)** — Gatehouse (v2) token, typography, motion, component, and architecture spec.
+- **[FRONTEND_ARCHITECTURE_REPORT.md](./FRONTEND_ARCHITECTURE_REPORT.md)** — Frontend architecture, component catalog, animation breakdown, and improvement backlog.
+- **[LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md)** — End-to-end Chrome + API test execution report (`jeevanL16/eventgenie`).
+- **[GATEHOUSE_CHECKLIST.md](./GATEHOUSE_CHECKLIST.md)** — Implementation progress checklist and handoff state.
+- **[REQUIREMENTS_COMPLIANCE.md](./REQUIREMENTS_COMPLIANCE.md)** — Problem-statement traceability matrix across security components.
 
 ---
 
-## Security Considerations
-
-- Never commit API keys, tokens, passwords, private keys, or `.env` files.
-- Keep scanner credentials separate from dashboard credentials.
-- Use trusted, independently obtained artifact hashes.
-- Do not expose the development backend directly to the public internet.
-- Review scanner findings before applying automated remediation.
-- Treat workflow analysis as a security control, not a guarantee that every attack will be detected.
-
----
-
-## Roadmap
-
-Potential future improvements:
-
-- GitHub Actions integration for automated workflow scanning.
-- Stronger end-to-end event-schema consistency across all scanners.
-- Artifact signing and verification with Sigstore Cosign.
-- Software Bill of Materials (SBOM) generation.
-- Supply-chain provenance and attestation.
-- Role-based access control and production authentication.
-- Centralized alerting and notification workflows.
-- Deployment-ready containerization and CI/CD automation.
-
----
-
-## Project Information
-
-- **Project:** PipelineGuard
-- **Category:** Cybersecurity | DevSecOps | CI/CD Security | Software Supply-Chain Security
-**Repository:** [hmvishwasballari-design/PipelineGuard](https://github.com/hmvishwasballari-design/PipelineGuard)
-
-PipelineGuard is an academic and engineering project developed to explore practical security controls for modern CI/CD pipelines and software delivery workflows.
-
----
-
-*Built with a security-first mindset.*
+<div align="center">
+<sub>Repository: <a href="https://github.com/jeevanL16/pipelineguard">jeevanL16/pipelineguard</a></sub>
+</div>

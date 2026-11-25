@@ -1,0 +1,451 @@
+/* PipelineGuard Gatehouse (v2) Design System Tokens
+ * Generated directly from DESIGN.md — never hardcode hex values in components.
+ */
+
+@font-face {
+  font-family: "Instrument Sans Fallback";
+  src: local("Arial"), local("Segoe UI"), local("Helvetica Neue");
+  size-adjust: 97%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Fallback";
+  src: local("Consolas"), local("Courier New");
+  size-adjust: 98%;
+}
+
+:root {
+  --pg-font-sans: "Instrument Sans", "Instrument Sans Fallback", -apple-system, BlinkMacSystemFont, sans-serif;
+  --pg-font-mono: "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, SFMono-Regular, monospace;
+
+  /* Spacing (4px base) */
+  --pg-space-xs: 4px;
+  --pg-space-sm: 8px;
+  --pg-space-md: 16px;
+  --pg-space-lg: 24px;
+  --pg-space-xl: 40px;
+  --pg-space-2xl: 64px;
+  --pg-space-section: 96px;
+  --pg-content-max: 1200px;
+  --pg-prose-max: 40rem;
+  --pg-sidebar-w: 232px;
+  --pg-sidebar-collapsed-w: 56px;
+
+  /* Shapes / Radii */
+  --pg-radius-none: 0px;
+  --pg-radius-sm: 4px;
+  --pg-radius-md: 8px;
+  --pg-radius-lg: 14px;
+  --pg-radius-full: 9999px;
+
+  /* Motion */
+  --pg-motion-state-change: 120ms cubic-bezier(0, 0, 0.2, 1);
+  --pg-motion-surface-enter: 240ms cubic-bezier(0.2, 0, 0, 1);
+  --pg-motion-surface-exit: 160ms cubic-bezier(0.3, 0, 1, 1);
+  --pg-motion-row-flash: 600ms ease-out;
+  --pg-motion-scan-line: 70ms linear;
+  --pg-motion-diff-swap: 200ms ease-in-out;
+  --pg-motion-seal-stamp: 240ms cubic-bezier(0.2, 0, 0, 1);
+  --pg-motion-view-change: 200ms ease-in-out;
+}
+
+:root,
+:root[data-theme="dark"],
+.pg-force-dark {
+  --pg-primary: #5CC9B0;
+  --pg-primary-hover: #7FD6C2;
+  --pg-on-primary: #0A1317;
+  --pg-scrim: rgba(0, 0, 0, 0.6);
+  --pg-canvas: #0E181D;
+  --pg-panel: #142329;
+  --pg-raised: #1B2F36;
+  --pg-line: #2A4048;
+  --pg-line-strong: #628089;
+  --pg-text: #E9EFEC;
+  --pg-text-muted: #93A8AD;
+  --pg-critical: #FF7A7A;
+  --pg-high: #FF9F5A;
+  --pg-medium: #F0C75E;
+  --pg-low: #7FB2E5;
+  --pg-info: #93A8AD;
+  --pg-pass: #5CC9B0;
+  --pg-critical-tint: #3A3136;
+  --pg-high-tint: #3A3731;
+  --pg-medium-tint: #373D31;
+  --pg-low-tint: #253A47;
+  --pg-pass-tint: #203E3F;
+  --pg-overlay-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme="light"] {
+  --pg-primary: #0B6F5F;
+  --pg-primary-hover: #085A4D;
+  --pg-on-primary: #FFFFFF;
+  --pg-scrim: rgba(16, 32, 31, 0.45);
+  --pg-canvas: #F4F7F6;
+  --pg-panel: #FFFFFF;
+  --pg-raised: #E8EEEC;
+  --pg-line: #CBD6D3;
+  --pg-line-strong: #6F8782;
+  --pg-text: #10201F;
+  --pg-text-muted: #4A5F5C;
+  --pg-critical: #C4262E;
+  --pg-high: #A94A0C;
+  --pg-medium: #8A6410;
+  --pg-low: #1F5FA8;
+  --pg-info: #4A5F5C;
+  --pg-pass: #0B6F5F;
+  --pg-critical-tint: #F9E9EA;
+  --pg-high-tint: #F6EDE7;
+  --pg-medium-tint: #F3F0E7;
+  --pg-low-tint: #E9EFF6;
+  --pg-pass-tint: #E7F1EF;
+  --pg-overlay-shadow: 0 12px 40px rgba(16, 32, 31, 0.18);
+}
+
+/* Re-bind dark for forced dark surfaces inside light theme (e.g. hero code sample) */
+:root[data-theme="light"] .pg-force-dark {
+  --pg-primary: #5CC9B0;
+  --pg-primary-hover: #7FD6C2;
+  --pg-on-primary: #0A1317;
+  --pg-canvas: #0E181D;
+  --pg-panel: #142329;
+  --pg-raised: #1B2F36;
+  --pg-line: #2A4048;
+  --pg-line-strong: #628089;
+  --pg-text: #E9EFEC;
+  --pg-text-muted: #93A8AD;
+  --pg-critical: #FF7A7A;
+  --pg-high: #FF9F5A;
+  --pg-medium: #F0C75E;
+  --pg-low: #7FB2E5;
+  --pg-info: #93A8AD;
+  --pg-pass: #5CC9B0;
+  --pg-critical-tint: #3A3136;
+  --pg-high-tint: #3A3731;
+  --pg-medium-tint: #373D31;
+  --pg-low-tint: #253A47;
+  --pg-pass-tint: #203E3F;
+  color: var(--pg-text);
+  background-color: var(--pg-canvas);
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    --pg-line: var(--pg-line-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    --pg-canvas: Canvas;
+    --pg-panel: Canvas;
+    --pg-raised: ButtonFace;
+    --pg-text: CanvasText;
+    --pg-text-muted: GrayText;
+    --pg-line: CanvasText;
+    --pg-line-strong: CanvasText;
+    --pg-primary: Highlight;
+    --pg-on-primary: HighlightText;
+  }
+}
+
+@theme {
+  --color-pg-primary: var(--pg-primary);
+  --color-pg-primary-hover: var(--pg-primary-hover);
+  --color-pg-on-primary: var(--pg-on-primary);
+  --color-pg-canvas: var(--pg-canvas);
+  --color-pg-panel: var(--pg-panel);
+  --color-pg-raised: var(--pg-raised);
+  --color-pg-line: var(--pg-line);
+  --color-pg-line-strong: var(--pg-line-strong);
+  --color-pg-text: var(--pg-text);
+  --color-pg-text-muted: var(--pg-text-muted);
+  --color-pg-critical: var(--pg-critical);
+  --color-pg-high: var(--pg-high);
+  --color-pg-medium: var(--pg-medium);
+  --color-pg-low: var(--pg-low);
+  --color-pg-info: var(--pg-info);
+  --color-pg-pass: var(--pg-pass);
+  --color-pg-critical-tint: var(--pg-critical-tint);
+  --color-pg-high-tint: var(--pg-high-tint);
+  --color-pg-medium-tint: var(--pg-medium-tint);
+  --color-pg-low-tint: var(--pg-low-tint);
+  --color-pg-pass-tint: var(--pg-pass-tint);
+  --font-sans: var(--pg-font-sans);
+  --font-mono: var(--pg-font-mono);
+}
+
+/* Global Reset & Base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--pg-canvas);
+  color: var(--pg-text);
+  font-family: var(--pg-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--pg-canvas);
+  color: var(--pg-text);
+  font-size: 16px;
+  line-height: 1.6;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Focus ring specification: 2px verdigris outline with 2px offset */
+:focus-visible {
+  outline: 2px solid var(--pg-primary);
+  outline-offset: 2px;
+}
+
+/* Code blocks: ligatures off */
+code,
+pre,
+kbd,
+.pg-mono {
+  font-family: var(--pg-font-mono);
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/* Tabular numbers */
+.pg-tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Exact Typography Classes from DESIGN.md */
+.pg-display-xl {
+  font-family: var(--pg-font-sans);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.pg-display-lg {
+  font-family: var(--pg-font-sans);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.pg-headline-lg {
+  font-family: var(--pg-font-sans);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.pg-headline-md {
+  font-family: var(--pg-font-sans);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+.pg-headline-sm {
+  font-family: var(--pg-font-sans);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+@media (min-width: 640px) {
+  .pg-display-xl {
+    font-size: 64px;
+    line-height: 1.02;
+  }
+  .pg-display-lg {
+    font-size: 48px;
+    line-height: 1.05;
+  }
+  .pg-headline-lg {
+    font-size: 32px;
+    line-height: 1.15;
+  }
+}
+
+.pg-body-lg {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.pg-body-md {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.pg-body-sm {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.pg-label-lg {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+}
+.pg-label-md {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.pg-label-sm {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+.pg-data-md {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  font-feature-settings: "tnum" 1;
+}
+.pg-code-md {
+  font-family: var(--pg-font-mono);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+.pg-code-sm {
+  font-family: var(--pg-font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "calt" 0;
+}
+
+/* Verification Seal Stamp Animation */
+@keyframes pg-seal-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pg-seal-stamp {
+  animation: pg-seal-stamp var(--pg-motion-seal-stamp) forwards;
+}
+
+/* Finding / Surface Enter */
+@keyframes pg-surface-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pg-surface-enter {
+  animation: pg-surface-enter var(--pg-motion-surface-enter) both;
+}
+
+/* Row single-shot background flash */
+@keyframes pg-row-flash {
+  0% {
+    background-color: var(--pg-pass-tint);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.pg-row-flash {
+  animation: pg-row-flash var(--pg-motion-row-flash);
+}
+
+/* How it works CSS view() scroll-driven gate line */
+.pg-gate-line {
+  transform-origin: left top;
+  transform: scaleX(1);
+}
+
+@media (max-width: 767px) {
+  .pg-gate-line {
+    transform: scaleY(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+    .pg-gate-line {
+      transform: scaleX(0);
+      animation: pg-gate-draw-x linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 55%;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) and (max-width: 767px) {
+    .pg-gate-line {
+      transform: scaleY(0);
+      animation: pg-gate-draw-y linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 55%;
+    }
+  }
+}
+
+@keyframes pg-gate-draw-x {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes pg-gate-draw-y {
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-seal-stamp,
+  .pg-surface-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .pg-row-flash {
+    animation: none;
+    background-color: var(--pg-pass-tint);
+  }
+}
+
+/* View Transitions fallback tuning */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0ms;
+  }
+}
