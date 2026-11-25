@@ -7,7 +7,11 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from security.workflow.analyzer import AnalysisResult, SuppressedFinding, analyze_paths, _scan_single_file
+from security.workflow.analyzer import (
+    AnalysisResult,
+    SuppressedFinding,
+    _scan_single_file,
+)
 from security.workflow.config import Config
 from security.workflow.detectors._base import trigger_set
 from security.workflow.detectors.commands import _first_line
@@ -33,7 +37,7 @@ class TestCoverageEdgeCases:
         def failing_stat(self: Path, *args: object, **kwargs: object) -> os.stat_result:
             if self == wf_file:
                 raise OSError("Disk read fault")
-            return orig_stat(self, *args, **kwargs)
+            return orig_stat(self, *args, **kwargs)  # type: ignore[arg-type]
 
         with patch.object(Path, "stat", autospec=True, side_effect=failing_stat):
             findings, _, analyzed = _scan_single_file(wf_file, Config())
