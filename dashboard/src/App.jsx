@@ -11,6 +11,7 @@ import {
   Clock3,
   Database,
   Eye,
+  Menu,
   FileClock,
   FileWarning,
   GitBranch,
@@ -21,6 +22,7 @@ import {
   Search,
   Settings,
   Shield,
+  ShieldCheck,
   ShieldAlert,
   Terminal,
   TriangleAlert,
@@ -40,13 +42,10 @@ import {
 
 import "./App.css";
 import {
-  clearAccessToken,
-  getAccessToken,
   getBackendHealth,
   getPipelines,
   getRuns,
   getSecurityEvents,
-  login,
   updateSecurityEventStatus,
 } from "./services/api";
 
@@ -425,8 +424,70 @@ function OverviewPage({
     events: count,
   }));
 
+  const riskLevel = events.length
+    ? averageRisk >= 75
+      ? "high"
+      : averageRisk >= 40
+        ? "medium"
+        : "low"
+    : "none";
+
   return (
     <>
+      <section className={`hero hero-${riskLevel}`}>
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-content">
+          <div className="hero-kicker">
+            <span className="live-dot" />
+            Security posture
+          </div>
+          <h1 className="hero-title">
+            {eventsLoading
+              ? "Analysing your pipelines…"
+              : events.length === 0
+                ? "Every pipeline, protected."
+                : openEvents.length === 0
+                  ? "All clear. Nothing needs you."
+                  : `${openEvents.length} ${
+                      openEvents.length === 1 ? "threat needs" : "threats need"
+                    } your attention.`}
+          </h1>
+          <p className="hero-sub">
+            PipelineGuard watches workflows, secrets and artifacts across{" "}
+            {pipelineLoading ? "your" : pipelines.length} monitored{" "}
+            {pipelines.length === 1 ? "pipeline" : "pipelines"} in real time.
+          </p>
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => onNavigate("Threats")}
+            >
+              <ShieldAlert size={16} />
+              Review threats
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => onNavigate("Pipelines")}
+            >
+              <GitBranch size={16} />
+              View pipelines
+            </button>
+          </div>
+        </div>
+
+        <div className="hero-score">
+          <div className="hero-score-value">
+            {eventsLoading ? "…" : averageRisk.toFixed(0)}
+          </div>
+          <div className="hero-score-label">Average risk</div>
+          <div className="hero-score-bar">
+            <span style={{ width: `${Math.min(100, Math.max(0, averageRisk))}%` }} />
+          </div>
+        </div>
+      </section>
+
       <section className="metrics-grid">
         <div className="metric-card">
           <div className="metric-top">
@@ -525,41 +586,49 @@ function OverviewPage({
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="0%" stopColor="#8b8b83" stopOpacity={0.12} />
-                      <stop offset="100%" stopColor="#8b8b83" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#e50914" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="#e50914" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="3 3"
+                    strokeDasharray="2 6"
                     vertical={false}
-                    stroke="#1a1e20"
+                    stroke="rgba(255,255,255,0.08)"
                   />
                   <XAxis
                     dataKey="time"
-                    tick={{ fill: "#4f544f", fontSize: 8 }}
+                    tick={{ fill: "#8e8e93", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
+                    dy={6}
                   />
                   <YAxis
-                    tick={{ fill: "#4f544f", fontSize: 8 }}
+                    tick={{ fill: "#8e8e93", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
-                    width={25}
+                    width={30}
                   />
                   <Tooltip
+                    cursor={{ stroke: "rgba(255,255,255,0.18)", strokeWidth: 1 }}
                     contentStyle={{
-                      background: "#0c0f11",
-                      border: "1px solid #292d30",
-                      borderRadius: "6px",
-                      color: "#c9cac4",
-                      fontSize: "10px",
+                      background: "rgba(28,28,30,0.82)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "12px",
+                      color: "#f5f5f7",
+                      fontSize: "12px",
+                      boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
                     }}
+                    itemStyle={{ color: "#f5f5f7" }}
+                    labelStyle={{ color: "#8e8e93", marginBottom: 2 }}
                   />
                   <Area
                     type="monotone"
                     dataKey="events"
-                    stroke="#8b8b83"
-                    strokeWidth={1.5}
+                    stroke="#ff3b47"
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 5, fill: "#fff", stroke: "#e50914", strokeWidth: 2 }}
                     fill="url(#activityGradient)"
                   />
                 </AreaChart>
@@ -577,7 +646,10 @@ function OverviewPage({
             </div>
           </div>
           <div className="risk-display">
-            <div className="risk-ring">
+            <div
+              className={`risk-ring risk-${riskLevel}`}
+              style={{ "--pct": Math.min(100, Math.max(0, averageRisk)) }}
+            >
               <div className="risk-ring-inner">
                 <strong>{eventsLoading ? "…" : averageRisk.toFixed(1)}</strong>
                 <span>/100</span>
@@ -1313,29 +1385,66 @@ function IncidentsPage({
           <p>Check that the backend is running and the events API is available.</p>
         </section>
       ) : selectedIncident ? (
-        <section className="panel">
+        <section className="panel incident-detail">
           <button
             type="button"
             className="secondary-button"
             onClick={() => setSelectedIncident(null)}
           >
-            Back to incidents
+            ← Back to incidents
           </button>
-          <h2>{selectedIncident.title}</h2>
-          <p>{selectedIncident.description}</p>
-          <p><strong>ID:</strong> {selectedIncident.id}</p>
-          <p><strong>Source:</strong> {selectedIncident.source}</p>
-          <p><strong>Severity:</strong> {selectedIncident.severity}</p>
-          <p><strong>Risk score:</strong> {selectedIncident.risk}/100</p>
-          <p><strong>Status:</strong> {selectedIncident.status}</p>
-          <p><strong>Reported:</strong> {selectedIncident.time}</p>
 
-          <div style={{ marginTop: "20px", maxWidth: "360px" }}>
+          <div className="detail-head">
+            <div className="panel-label">{selectedIncident.id}</div>
+            <h2>{selectedIncident.title}</h2>
+            <p>{selectedIncident.description}</p>
+          </div>
+
+          <dl className="detail-grid">
+            <div>
+              <dt>Source</dt>
+              <dd>{selectedIncident.source}</dd>
+            </div>
+            <div>
+              <dt>Severity</dt>
+              <dd>
+                <span
+                  className={`sev-pill sev-${String(selectedIncident.severity).toLowerCase()}`}
+                >
+                  {selectedIncident.severity}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Risk score</dt>
+              <dd>
+                <span className="detail-risk">{selectedIncident.risk}</span>
+                <span className="detail-risk-max">/100</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <span
+                  className={`threat-status ${String(selectedIncident.status).toLowerCase()}`}
+                >
+                  {selectedIncident.status}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>Reported</dt>
+              <dd>{selectedIncident.time}</dd>
+            </div>
+          </dl>
+
+          <div className="status-editor">
             <label htmlFor="incident-status">
               <strong>Update incident status</strong>
             </label>
             <select
               id="incident-status"
+              className="select"
               value={newStatus || selectedIncident.status}
               onChange={(event) => {
                 setNewStatus(event.target.value);
@@ -1343,16 +1452,6 @@ function IncidentsPage({
                 setStatusSuccess("");
               }}
               disabled={statusSaving}
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "10px",
-                marginTop: "8px",
-                background: "var(--panel-background, #171717)",
-                color: "inherit",
-                border: "1px solid var(--border-color, #303030)",
-                borderRadius: "8px",
-              }}
             >
               <option value="OPEN">OPEN</option>
               <option value="INVESTIGATING">INVESTIGATING</option>
@@ -1362,7 +1461,7 @@ function IncidentsPage({
 
             <button
               type="button"
-              className="secondary-button"
+              className="btn-primary"
               disabled={
                 statusSaving ||
                 !(newStatus || selectedIncident.status) ||
@@ -1397,18 +1496,17 @@ function IncidentsPage({
                   setStatusSaving(false);
                 }
               }}
-              style={{ marginTop: "10px" }}
             >
               {statusSaving ? "Saving..." : "Save status"}
             </button>
 
             {statusError && (
-              <p role="alert" style={{ color: "#f87171" }}>
+              <p role="alert" className="form-msg form-msg-error">
                 {statusError}
               </p>
             )}
             {statusSuccess && (
-              <p role="status" style={{ color: "#4ade80" }}>
+              <p role="status" className="form-msg form-msg-success">
                 {statusSuccess}
               </p>
             )}
@@ -1495,32 +1593,25 @@ function IncidentsPage({
                 type="button"
                 className="incident-row"
                 onClick={() => setSelectedIncident(incident)}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "16px",
-                  width: "100%",
-                  padding: "16px",
-                  marginTop: "10px",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  background: "transparent",
-                  color: "inherit",
-                  border: "1px solid var(--border-color, #303030)",
-                  borderRadius: "10px"
-                }}
               >
-                <span>
+                <span className="incident-main">
                   <strong>{incident.title}</strong>
-                  <br />
-                  <small>{incident.id} · {incident.source}</small>
-                  <br />
-                  <small>{incident.severity}</small>
+                  <small>
+                    {incident.id} · {incident.source}
+                  </small>
+                  <small>
+                    <span
+                      className={`sev-pill sev-${String(incident.severity).toLowerCase()}`}
+                    >
+                      {incident.severity}
+                    </span>
+                  </small>
                 </span>
-                <span>
-                  <strong>{incident.risk}/100</strong>
-                  <br />
+                <span className="incident-side">
+                  <strong>
+                    {incident.risk}
+                    <em>/100</em>
+                  </strong>
                   <small>{incident.status}</small>
                 </span>
               </button>
@@ -1613,61 +1704,14 @@ function SettingsPage() {
 ========================================================= */
 
 
-function LoginScreen({ onLogin }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setError("");
-    setSubmitting(true);
-    try {
-      await onLogin(username, password);
-    } catch (err) {
-      setError(err.message || "Unable to sign in.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <main className="auth-screen">
-      <section className="auth-card">
-        <div className="auth-brand">
-          <div className="auth-brand-mark"><Shield size={22} /></div>
-          <div><strong>PIPELINEGUARD</strong><span>SECURITY CONTROL</span></div>
-        </div>
-        <h1>Welcome back</h1>
-        <p className="auth-description">Sign in to access your CI/CD security dashboard.</p>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label className="auth-field">Username
-            <input autoComplete="username" value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              required maxLength={128} autoFocus />
-          </label>
-          <label className="auth-field">Password
-            <input type="password" autoComplete="current-password"
-              value={password} onChange={(event) => setPassword(event.target.value)}
-              required maxLength={1024} />
-          </label>
-          {error && <div className="auth-error" role="alert">{error}</div>}
-          <button className="auth-submit" type="submit" disabled={submitting}>
-            {submitting ? "Authenticating..." : "Sign in securely"}
-          </button>
-        </form>
-        <div className="auth-footer">AUTHORIZED ACCESS ONLY · PIPELINEGUARD</div>
-      </section>
-    </main>
-  );
-}
-
 export default function App() {
-  const [authenticated, setAuthenticated] = useState(() => Boolean(getAccessToken()));
-  const [activePage, setActivePage] = useState("Overview");
+  const [activePage, setActivePage] = useState(() => {
+    const savedPage = window.history.state?.pipelineGuardPage;
+    return typeof savedPage === "string" ? savedPage : "Overview";
+  });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [navOpen, setNavOpen] = useState(false);
 const [backendStatus, setBackendStatus] = useState("CONNECTING");
   const [dbPipelines, setDbPipelines] = useState([]);
   const [pipelineLoading, setPipelineLoading] = useState(true);
@@ -1691,34 +1735,6 @@ const [securityEventsError, setSecurityEventsError] = useState("");
   }, []);
 
   useEffect(() => {
-    const handleUnauthorized = () => setAuthenticated(false);
-    window.addEventListener("pipelineguard:unauthorized", handleUnauthorized);
-    return () => window.removeEventListener("pipelineguard:unauthorized", handleUnauthorized);
-  }, []);
-
-  const handleLogin = async (username, password) => {
-    await login(username, password);
-    setPipelineLoading(true);
-    setRunsLoading(true);
-    setSecurityEventsLoading(true);
-    setPipelineError("");
-    setRunsError("");
-    setSecurityEventsError("");
-    setAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    clearAccessToken();
-    setAuthenticated(false);
-    setDbPipelines([]);
-    setDbRuns([]);
-    setDbSecurityEvents([]);
-    setActivePage("Overview");
-  };
-
-
-  useEffect(() => {
-    if (!authenticated) return undefined;
     let cancelled = false;
 
     getPipelines()
@@ -1742,7 +1758,7 @@ const [securityEventsError, setSecurityEventsError] = useState("");
     return () => {
       cancelled = true;
     };
-  }, [authenticated]);
+  }, []);
 
 const refreshSecurityEvents = async () => {
   try {
@@ -1758,7 +1774,6 @@ const refreshSecurityEvents = async () => {
 };
 
 useEffect(() => {
-  if (!authenticated) return undefined;
   let cancelled = false;
 
   getSecurityEvents()
@@ -1784,11 +1799,10 @@ useEffect(() => {
   return () => {
     cancelled = true;
   };
-}, [authenticated]);
+}, []);
 
 
   useEffect(() => {
-    if (!authenticated) return undefined;
     let cancelled = false;
 
     getRuns()
@@ -1814,13 +1828,86 @@ useEffect(() => {
     return () => {
       cancelled = true;
     };
-  }, [authenticated]);
+  }, []);
 
+
+  useEffect(() => {
+    const currentState = window.history.state || {};
+
+    if (currentState.pipelineGuardPage !== activePage) {
+      window.history.replaceState(
+        {
+          ...currentState,
+          pipelineGuardPage: activePage,
+          pipelineGuardDepth: 0,
+        },
+        ""
+      );
+    }
+
+    const handlePopState = (event) => {
+      const page = event.state?.pipelineGuardPage;
+
+      setActivePage(
+        typeof page === "string" ? page : "Overview"
+      );
+
+      setSearchOpen(false);
+      setNavOpen(false);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   const handleNavigation = (page) => {
-    setActivePage(page);
+    if (page !== activePage) {
+      const currentState = window.history.state || {};
+      const depth = Number(currentState.pipelineGuardDepth) || 0;
+
+      window.history.pushState(
+        {
+          ...currentState,
+          pipelineGuardPage: page,
+          pipelineGuardDepth: depth + 1,
+        },
+        ""
+      );
+
+      setActivePage(page);
+    }
+
     setSearchOpen(false);
+    setNavOpen(false);
   };
+
+  const handleBackNavigation = () => {
+    const currentState = window.history.state || {};
+    const depth = Number(currentState.pipelineGuardDepth) || 0;
+
+    if (depth > 0) {
+      window.history.back();
+    } else if (activePage !== "Overview") {
+      handleNavigation("Overview");
+    }
+  };
+
+  useEffect(() => {
+    const handleKeys = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      } else if (event.key === "Escape") {
+        setSearchOpen(false);
+        setNavOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeys);
+    return () => window.removeEventListener("keydown", handleKeys);
+  }, []);
 
   const searchItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -1914,13 +2001,9 @@ return (
     }
   };
 
-  if (!authenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
-
-  return (
+return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className={`sidebar ${navOpen ? "open" : ""}`}>
         <div className="brand">
           <div className="brand-mark">
             <Shield size={17} />
@@ -1996,9 +2079,35 @@ return (
         </div>
       </aside>
 
+      <div
+        className={`sidebar-scrim ${navOpen ? "open" : ""}`}
+        onClick={() => setNavOpen(false)}
+        aria-hidden="true"
+      />
+
       <main className="main-content">
         <header className="top-header">
+          <button
+            type="button"
+            className="menu-button"
+            aria-label="Open navigation"
+            onClick={() => setNavOpen(true)}
+          >
+            <Menu size={18} />
+          </button>
+
           <div className="breadcrumb">
+            {activePage !== "Overview" && (
+              <button
+                type="button"
+                className="breadcrumb-back"
+                onClick={handleBackNavigation}
+                aria-label="Go back to previous page"
+                title="Go back"
+              >
+                ←
+              </button>
+            )}
             <span>PIPELINEGUARD</span>
             <ChevronRight size={11} />
             <strong>{activePage.toUpperCase()}</strong>
@@ -2011,7 +2120,7 @@ return (
             >
               <Search size={14} />
               <span>Search</span>
-              <kbd>⌘ K</kbd>
+              <kbd>⌘K</kbd>
             </button>
 
             <div className="header-divider" />
@@ -2024,13 +2133,11 @@ return (
             <div className="profile">
               <div className="profile-avatar">HV</div>
             </div>
-            <button className="profile-logout" onClick={handleLogout}>
-              Sign out
-            </button>
+
           </div>
         </header>
 
-        <div className="page-content">
+        <div className="page-content" key={activePage}>
           {renderPage()}
 
           <footer className="app-footer">
@@ -2150,6 +2257,7 @@ function AuditLogPage() {
     <section className="page-content">
       <div className="page-header">
         <div>
+          <div className="eyebrow">ACCOUNTABILITY</div>
           <h1>Audit Log</h1>
           <p>Recorded security incident status changes.</p>
         </div>
@@ -2162,29 +2270,29 @@ function AuditLogPage() {
       ) : logs.length === 0 ? (
         <p>No audit records found.</p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="data-table-wrap">
+          <table className="data-table">
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "12px" }}>Time</th>
-                <th style={{ textAlign: "left", padding: "12px" }}>Incident ID</th>
-                <th style={{ textAlign: "left", padding: "12px" }}>Previous status</th>
-                <th style={{ textAlign: "left", padding: "12px" }}>New status</th>
-                <th style={{ textAlign: "left", padding: "12px" }}>Actor</th>
+                <th>Time</th>
+                <th>Incident ID</th>
+                <th>Previous status</th>
+                <th>New status</th>
+                <th>Actor</th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log) => (
                 <tr key={log.id}>
-                  <td style={{ padding: "12px" }}>
+                  <td>
                     {log.changed_at
                       ? new Date(log.changed_at).toLocaleString()
                       : "—"}
                   </td>
-                  <td style={{ padding: "12px" }}>{log.event_id}</td>
-                  <td style={{ padding: "12px" }}>{log.previous_status}</td>
-                  <td style={{ padding: "12px" }}>{log.new_status}</td>
-                  <td style={{ padding: "12px" }}>{log.actor}</td>
+                  <td>{log.event_id}</td>
+                  <td>{log.previous_status}</td>
+                  <td>{log.new_status}</td>
+                  <td>{log.actor}</td>
                 </tr>
               ))}
             </tbody>

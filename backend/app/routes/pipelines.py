@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import DashboardUser
+from app.auth import DashboardUser, LocalDashboardRead
 from app.models.pipeline import Pipeline
 from app.schemas.pipeline import PipelineCreate, PipelineResponse
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/pipelines", tags=["Pipelines"])
 
 @router.get("", response_model=list[PipelineResponse])
 def list_pipelines(
-    user: DashboardUser,
+    _local_read: LocalDashboardRead,
     db: Session = Depends(get_db),
 ):
     return db.query(Pipeline).order_by(Pipeline.id.desc()).all()
@@ -55,7 +55,7 @@ def create_pipeline(
 @router.get("/{pipeline_id}", response_model=PipelineResponse)
 def get_pipeline(
     pipeline_id: str,
-    user: DashboardUser,
+    _local_read: LocalDashboardRead,
     db: Session = Depends(get_db),
 ):
     pipeline = (

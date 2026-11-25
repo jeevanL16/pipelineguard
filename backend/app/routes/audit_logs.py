@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import DashboardUser
+from app.auth import LocalDashboardRead
 from app.models.audit_log import AuditLog
 
 router = APIRouter(prefix="/api/audit-logs", tags=["Audit Logs"])
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/audit-logs", tags=["Audit Logs"])
 
 @router.get("")
 def list_audit_logs(
-    user: DashboardUser,
+    _local_read: LocalDashboardRead,
     db: Session = Depends(get_db),
 ):
     records = (

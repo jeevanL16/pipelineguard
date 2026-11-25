@@ -5,7 +5,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
+import ipaddress
+
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pwdlib import PasswordHash
 
@@ -111,5 +113,20 @@ def require_scanner_token(
     return {"role": "scanner"}
 
 
+def require_local_dashboard_read(request: Request) -> None:
+    """Allow read-only dashboard access from this machine only."""
+    if request.client is None:
+        raise HTTPException(status_code=403, detail="Local access only")
+
+    try:
+        address = ipaddress.ip_address(request.client.host)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Local access only") from None
+
+    if not address.is_loopback:
+        raise HTTPException(status_code=403, detail="Local access only")
+
+
 DashboardUser = Annotated[dict, Depends(require_dashboard_user)]
+LocalDashboardRead = Annotated[None, Depends(require_local_dashboard_read)]
 ScannerClient = Annotated[dict, Depends(require_scanner_token)]

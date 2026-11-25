@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.auth import DashboardUser, ScannerClient
+from app.auth import DashboardUser, ScannerClient, LocalDashboardRead
 from app.models.security_event import SecurityEvent
 from app.models.audit_log import AuditLog
 from app.schemas.security_event import (
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/events", tags=["Security Events"])
 
 @router.get("", response_model=list[SecurityEventResponse])
 def list_events(
-    user: DashboardUser,
+    _local_read: LocalDashboardRead,
     db: Session = Depends(get_db),
 ):
     return (

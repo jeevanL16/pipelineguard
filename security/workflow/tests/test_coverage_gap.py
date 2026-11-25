@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-from security.workflow.analyzer import AnalysisResult, SuppressedFinding, analyze_paths
+from security.workflow.analyzer import AnalysisResult, SuppressedFinding, analyze_paths, _scan_single_file
 from security.workflow.config import Config
 from security.workflow.detectors._base import trigger_set
 from security.workflow.detectors.commands import _first_line
@@ -23,42 +23,39 @@ from security.workflow.rules import Severity
 
 class TestCoverageEdgeCases:
     def test_analyzer_stat_and_read_oserror(self, tmp_path: Path) -> None:
-        """Cover lines 387-402 and 442-457 in analyzer.py."""
+        """Cover stat and read_text OSError handling in _scan_single_file."""
         wf_file = tmp_path / "dummy.yml"
         wf_file.write_text("name: Test\non: push\njobs: {}\n", encoding="utf-8")
 
-        # Test stat OSError
+        # Test stat OSError directly, without filesystem discovery.
         orig_stat = Path.stat
-        call_count = 0
 
         def failing_stat(self: Path, *args: object, **kwargs: object) -> os.stat_result:
-            nonlocal call_count
-            follow_symlinks = bool(kwargs.get("follow_symlinks", True))
-            if self.name == "dummy.yml" and follow_symlinks:
-                call_count += 1
-                if call_count >= 3:
-                    raise OSError("Disk read fault")
-            return orig_stat(self, follow_symlinks=follow_symlinks)
+            if self == wf_file:
+                raise OSError("Disk read fault")
+            return orig_stat(self, *args, **kwargs)
 
         with patch.object(Path, "stat", autospec=True, side_effect=failing_stat):
-            res = analyze_paths([wf_file], scan_root=tmp_path, config=Config())
-            assert len(res.findings) == 1
-            assert res.findings[0].rule_id == "PG-WF-900"
-            assert "Failed to access workflow file" in res.findings[0].message
+            findings, _, analyzed = _scan_single_file(wf_file, Config())
+            assert not analyzed
+            assert len(findings) == 1
+            assert findings[0].rule_id == "PG-WF-900"
+            assert "Failed to access workflow file" in findings[0].message
 
-        # Test read_text OSError
+        # Test read_text OSError.
         orig_read = Path.read_text
 
         def failing_read(self: Path, *args: object, **kwargs: object) -> str:
-            if self.name == "dummy.yml":
+            if self == wf_file:
                 raise OSError("Permission denied")
             return orig_read(self, *args, **kwargs)  # type: ignore[arg-type]
 
         with patch.object(Path, "read_text", autospec=True, side_effect=failing_read):
-            res = analyze_paths([wf_file], scan_root=tmp_path, config=Config())
-            assert len(res.findings) == 1
-            assert res.findings[0].rule_id == "PG-WF-900"
-            assert "Failed to read workflow file" in res.findings[0].message
+            findings, _, analyzed = _scan_single_file(wf_file, Config())
+            assert not analyzed
+            assert len(findings) == 1
+            assert findings[0].rule_id == "PG-WF-900"
+            assert "Failed to read workflow file" in findings[0].message
 
     def test_parser_job_body_none_and_non_dict(self) -> None:
         """Cover parser lines 203-227."""

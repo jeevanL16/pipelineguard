@@ -30,6 +30,9 @@ ENV/
 .env.*
 !.env.example
 backend/.env
+*.sqlite
+*.db
+*.sqlite3
 
 # Build and packaging
 build/
