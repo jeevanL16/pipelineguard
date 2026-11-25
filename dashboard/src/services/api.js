@@ -87,6 +87,13 @@ export async function getPipelines() {
   return apiRequest("/api/pipelines");
 }
 
+export async function createPipeline(pipelineData) {
+  return apiRequest("/api/pipelines", {
+    method: "POST",
+    body: JSON.stringify(pipelineData),
+  });
+}
+
 export async function getRuns() {
   return apiRequest("/api/runs");
 }

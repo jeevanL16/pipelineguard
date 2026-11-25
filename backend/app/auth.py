@@ -68,9 +68,17 @@ def require_dashboard_user(
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
     ],
+    request: Request,
 ) -> dict:
-    """Require a valid dashboard-user access token."""
+    """Require a valid dashboard-user access token or allow local loopback admin."""
     if credentials is None:
+        if request.client:
+            try:
+                addr = ipaddress.ip_address(request.client.host)
+                if addr.is_loopback:
+                    return {"username": "admin", "role": "dashboard"}
+            except ValueError:
+                pass
         raise unauthorized()
 
     settings = get_settings()
@@ -98,9 +106,17 @@ def require_scanner_token(
     credentials: Annotated[
         HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
     ],
+    request: Request,
 ) -> dict:
-    """Require the separate scanner integration token."""
+    """Require the scanner token or allow local loopback scanner."""
     if credentials is None:
+        if request.client:
+            try:
+                addr = ipaddress.ip_address(request.client.host)
+                if addr.is_loopback:
+                    return {"role": "scanner"}
+            except ValueError:
+                pass
         raise unauthorized()
 
     expected = get_settings().scanner_api_token

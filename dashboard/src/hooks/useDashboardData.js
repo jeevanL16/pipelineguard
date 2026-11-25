@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getBackendHealth,
   getPipelines,
+  createPipeline,
   getRuns,
   getSecurityEvents,
   getAuditLogs,
@@ -43,6 +44,12 @@ export function useDashboardData() {
     }
   }, []);
 
+  const handleAddPipeline = async (pipelineData) => {
+    const newPipe = await createPipeline(pipelineData);
+    setPipelines((prev) => [newPipe, ...prev]);
+    return newPipe;
+  };
+
   const handleUpdateStatus = async (eventId, newStatus) => {
     try {
       await updateSecurityEventStatus(eventId, newStatus);
@@ -81,6 +88,7 @@ export function useDashboardData() {
     loading,
     error,
     refresh: fetchAllData,
+    addPipeline: handleAddPipeline,
     updateEventStatus: handleUpdateStatus,
   };
 }

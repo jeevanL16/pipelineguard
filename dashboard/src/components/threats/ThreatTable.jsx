@@ -17,7 +17,7 @@ const SEVERITY_COLORS = {
   INFO: "bg-gray-800 text-gray-300 border-gray-700",
 };
 
-const STATUS_OPTIONS = ["OPEN", "ACKNOWLEDGED", "RESOLVED", "DISMISSED"];
+const STATUS_OPTIONS = ["OPEN", "INVESTIGATING", "RESOLVED", "FALSE_POSITIVE"];
 
 export function ThreatTable({
   events = [],

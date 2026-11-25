@@ -34,6 +34,7 @@ export default function App() {
     loading,
     error,
     refresh,
+    addPipeline,
     updateEventStatus,
   } = useDashboardData();
 
@@ -240,7 +241,12 @@ export default function App() {
           {activePage === "Artifacts" && <ArtifactsPage />}
 
           {activePage === "Pipelines" && (
-            <PipelineGrid pipelines={pipelines} loading={loading} error={error} />
+            <PipelineGrid
+              pipelines={pipelines}
+              loading={loading}
+              error={error}
+              onAddPipeline={addPipeline}
+            />
           )}
 
           {activePage === "Runs" && (
