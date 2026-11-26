@@ -41,6 +41,7 @@ export {
   disposeSlabMaterials,
   type FaceShades,
   UNIT_BOX_GEOMETRY,
+  UNIT_SHADED_BOX_GEOMETRY,
   updateSlabMaterialTuple,
 } from "./shading";
 export {

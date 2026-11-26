@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { clamp01 } from "./motion3d";
 import type { Scene3DMode } from "./useScene3DMode";
+
+function clampUnit(value: number): number {
+  if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
+}
 
 export function computeSectionProgress(
   rectTop: number,
@@ -10,7 +15,7 @@ export function computeSectionProgress(
   if (viewportHeight <= 0) return 0;
   const denom = 0.5 * viewportHeight + rectHeight;
   if (denom <= 0) return 0;
-  return clamp01((0.85 * viewportHeight - rectTop) / denom);
+  return clampUnit((0.85 * viewportHeight - rectTop) / denom);
 }
 
 export interface SectionProgressStore {

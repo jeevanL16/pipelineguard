@@ -3,6 +3,8 @@ import { parseWorkflowYaml, type ParsedJob, type ParsedStep, type ParsedWorkflow
 import { SEVERITY_META } from "./severity";
 import type { AnalysisResult, RiskScore, WorkflowFinding } from "./schemas";
 
+export const CI_GATE_THRESHOLD = 70;
+
 const EXPR_RE = /\$\{\{((?:[^{}]|\{(?!\{)|\}(?!\})){0,2000}?)\}\}/g;
 
 const UNTRUSTED_EXACT = new Set([

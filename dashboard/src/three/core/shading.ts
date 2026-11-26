@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, MeshBasicMaterial } from "three";
+import { BoxGeometry, Color, Float32BufferAttribute, MeshBasicMaterial } from "three";
 
 export interface FaceShades {
   top: Color;
@@ -12,6 +12,37 @@ export interface FaceShades {
  * Always mount with dispose={null} in R3F so unmounting one scene preserves it for others.
  */
 export const UNIT_BOX_GEOMETRY = new BoxGeometry(1, 1, 1);
+
+function createShadedBoxGeometry(): BoxGeometry {
+  const geom = new BoxGeometry(1, 1, 1);
+  const normals = geom.getAttribute("normal");
+  const colors = new Float32Array(normals.count * 3);
+
+  for (let i = 0; i < normals.count; i++) {
+    const nx = normals.getX(i);
+    const ny = normals.getY(i);
+    const nz = normals.getZ(i);
+    // Isometric face luminance factors matching 0% / 12% / 22% shading depth cues in 1 draw call
+    let factor = 1.0;
+    if (ny > 0.5) factor = 1.0;
+    else if (ny < -0.5) factor = 0.7;
+    else if (nz > 0.5 || nx < -0.5) factor = 0.88;
+    else factor = 0.78;
+
+    colors[i * 3] = factor;
+    colors[i * 3 + 1] = factor;
+    colors[i * 3 + 2] = factor;
+  }
+
+  geom.setAttribute("color", new Float32BufferAttribute(colors, 3));
+  return geom;
+}
+
+/**
+ * Single-draw-call 3-face isometric shaded unit box geometry.
+ * Pair with MeshBasicMaterial({ vertexColors: true, toneMapped: false }) and dispose={null}.
+ */
+export const UNIT_SHADED_BOX_GEOMETRY = createShadedBoxGeometry();
 
 /**
  * Flat Gatehouse isometric three-face tone derivation:

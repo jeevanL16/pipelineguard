@@ -8,8 +8,9 @@
 | --- | --- | --- | --- | --- |
 | Phase A — Audit vs DESIGN.md | Done | 2026-11-26 | 2026-11-26 | c594051 |
 | Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | 9173133 |
-| 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 1 — Core Canvas & Theme | Not started | — | — | — |
+| 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | 6d3b8b9 |
+| 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
+| 3D Phase 2 — HeroGateScene | Not started | — | — | — |
 | 3D Phase 2 — HeroGateScene | Not started | — | — | — |
 | 3D Phase 3 — Architecture & Rules 3D | Not started | — | — | — |
 | 3D Phase 4 — AttackPath3D | Not started | — | — | — |
@@ -114,6 +115,37 @@
   - Used `verify3DSmoke.mjs` API route stub (`http://127.0.0.1:8000/api/**`) during standalone frontend preview tests because FastAPI backend was not running during Phase 0 browser check; noted in log, backend untouched.
 - **Open questions:** None — proceed to 3D Phase 1 (`GateSequence3D`).
 
+### 3D Phase 1 — `GateSequence3D`
+
+- **Goal:** Add the scroll-linked 4-station isometric `GateSequence3D` above the numbered DOM rail in `HowItWorksSection.tsx`, driven by parsed AST nodes, `sampleWorkflows.ts` paths, analyzer `CI_GATE_THRESHOLD`, and a canonicalized Web Crypto SHA-256 digest, with shared `LedgerChainGroup` for Station 4 and synchronous DOM badge lighting.
+- **Files changed:**
+  - `dashboard/src/rules/analyzer.ts` & `dashboard/src/features/overview/OverviewPage.tsx` (exported and shared `CI_GATE_THRESHOLD = 70`).
+  - `dashboard/src/styles/tokens.css` (added `[data-scene3d="on"] .pg-gate-line` CSS timeline override so JS scroll progress never double-drives CSS animation).
+  - `dashboard/src/three/core/useSectionProgress.ts` (inlined `clampUnit` to avoid pulling `three` via `motion3d.ts` into the landing chunk).
+  - `dashboard/src/three/core/shading.ts` & `core/index.ts` (added single-draw-call 3-face shaded `UNIT_SHADED_BOX_GEOMETRY` via vertex colors).
+  - `dashboard/src/three/scenes/LedgerChain3D.tsx` (reusable instanced ledger chain blocks).
+  - `dashboard/src/three/scenes/GateSequence3D/{sequenceData.ts,index.tsx,__tests__/sequenceData.test.ts}`.
+  - `dashboard/src/features/landing/components/HowItWorksSection.tsx` (280px lazy desktop band aligned to badge centers via `ResizeObserver` + `"Show sequence again"` replay button + equivalent desktop 2D fallback).
+  - `dashboard/scripts/verifyPhaseScenes.mjs` (Playwright live WebGL + draw call + isolation verifier).
+- **Commands run (PASS / FAIL):**
+  - `cd d:\pipelineguard\dashboard; npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `cd d:\pipelineguard\dashboard; npm run lint` -> **PASS** (`LINT=0`)
+  - `cd d:\pipelineguard\dashboard; npm test` -> **PASS** (`VITEST=0`, 8/8 tests across `core.test.ts` + `sequenceData.test.ts`)
+  - `cd d:\pipelineguard\dashboard; npm run build; node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true`)
+  - `cd d:\pipelineguard\dashboard; node scripts\verifyPhaseScenes.mjs` (`VITE_E2E=1` preview) -> **PASS** (`PHASE_SCENES=0`):
+    - `/app` routes (`/app`, `/app/findings`, `/app/pipelines`, `/app/runs`): `threeReqsCount: 0`, `errors: []`
+    - `/ ?scene3d=force` `#how-it-works`: `canvasBox: 1152x280`, `calls: 9` (<= 12), `triangles: 345` (<= 20,000), `data-scene3d="on"`, `litCount: 4`, `errors: []`
+    - `/?scene3d=off` desktop fallback: `canvasCount: 0`, displays real `Gate threshold: 70` and `100/100`, `errors: []`
+    - Mobile 360px: `hasOverflow: false`, `canvasCount: 0`
+  - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - `GateSequence3D-*.js`: `931.77 kB` (`247.24 kB` Vite gz / `239.45 KiB` Node zlib gz).
+  - WebGL telemetry (`gl.info.render`): **9 draw calls**, **345 triangles**.
+  - Landing static closure: `242.83 KiB` gz (`+2.45 KiB` over Phase 0 baseline from `useSectionProgress`, `useScene3DMode`, and fallback DOM strip; `three` / `@react-three` static imports = `0`).
+- **Deviations from spec:** Switched slabs/bars from 6-material arrays to single-draw vertex-shaded `UNIT_SHADED_BOX_GEOMETRY` after observing 20 WebGL draw calls on initial run; keeps 3-face shading while dropping render calls to 9 (<= 12 budget).
+- **Open questions:** None — proceed to 3D Phase 2 (`HeroGateScene`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -138,4 +170,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 0 (`phase 0: install 3D core, glyphs, bundle isolation and smoke check`) and proceed to **3D Phase 1 — `GateSequence3D`** in `HowItWorksSection.tsx`.
+- **Next action:** Commit 3D Phase 1 and proceed to **3D Phase 2 — `heroScanStore`, `HeroGateScene`, stagger and seal fix**.

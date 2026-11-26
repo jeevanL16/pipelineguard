@@ -467,6 +467,12 @@ kbd,
   }
 }
 
+/* When 3D section-progress drives the gate line cleanly, disable view() CSS animation to avoid double-driving */
+[data-scene3d="on"] .pg-gate-line {
+  animation: none !important;
+  transform: scaleX(var(--gate-progress, 0));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pg-seal-stamp,
   .pg-surface-enter {

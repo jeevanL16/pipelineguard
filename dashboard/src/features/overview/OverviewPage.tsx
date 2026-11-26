@@ -10,8 +10,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Button, ErrorPanel, Panel } from "../../ui";
+import { Badge, Button, ErrorPanel, Panel } from "../../ui";
 import { SeverityShapeIcon } from "../../ui/Badge";
+import { CI_GATE_THRESHOLD } from "../../rules/analyzer";
 import { ApiError } from "../../services/api";
 import {
   rankNeedsAttention,
@@ -310,7 +311,7 @@ export function OverviewPage() {
               Mean finding risk by date
             </h2>
             <p className="pg-body-sm text-[var(--pg-text-muted)] m-0 mt-0.5">
-              Mean risk score across recorded findings against the 70-point CI gate threshold.
+              Mean risk score across recorded findings against the {CI_GATE_THRESHOLD}-point CI gate threshold.
             </p>
           </div>
           <div className="pg-data-md text-[var(--pg-text-muted)]">
@@ -355,11 +356,11 @@ export function OverviewPage() {
                 }}
               />
               <ReferenceLine
-                y={70}
+                y={CI_GATE_THRESHOLD}
                 stroke="var(--pg-high)"
                 strokeDasharray="4 4"
                 label={{
-                  value: "Gate threshold 70",
+                  value: `Gate threshold ${CI_GATE_THRESHOLD}`,
                   position: "insideTopRight",
                   fill: "var(--pg-high)",
                   fontSize: 11,
