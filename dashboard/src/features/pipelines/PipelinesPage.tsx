@@ -110,7 +110,7 @@ export function PipelinesPage() {
                       </div>
                       <Badge
                         severity={active ? "PASS" : "INFO"}
-                        label={active ? "Protected" : "Paused"}
+                        label={active ? "Active" : "Paused"}
                       />
                     </div>
 

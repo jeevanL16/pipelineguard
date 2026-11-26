@@ -8,7 +8,7 @@ const FAQS = [
   },
   {
     q: "What runs in the browser versus the backend?",
-    a: "The hero demo, workflow Playground, and artifact SHA-256 verification hash files run directly in your browser using the Web Crypto API and client rule engine. Connected pipelines, finding triage, and immutable status audit records persist in the FastAPI + SQLite backend.",
+    a: "The live scan demo, workflow Playground, and artifact SHA-256 verification hash files run directly in your browser using the Web Crypto API and client rule engine. Connected pipelines, finding triage, and immutable status audit records persist in the FastAPI + SQLite backend.",
   },
   {
     q: "How does PipelineGuard handle secret values?",
@@ -37,7 +37,7 @@ export function FaqSection() {
               <ChevronDown
                 size={16}
                 strokeWidth={1.5}
-                className="text-[var(--pg-text-muted)] shrink-0 transition-transform duration-150 group-open:rotate-180"
+                className="text-[var(--pg-text-muted)] shrink-0 transition-transform duration-120 group-open:rotate-180 motion-reduce:transition-none"
               />
             </summary>
             <p className="pg-body-sm text-[var(--pg-text-muted)] mt-3 mb-0">

@@ -2,6 +2,47 @@
  * Generated directly from DESIGN.md — never hardcode hex values in components.
  */
 
+/* Self-hosted Latin WOFF2 subsets paired with metric-matched system fallbacks */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-500-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-600-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}
+
 @font-face {
   font-family: "Instrument Sans Fallback";
   src: local("Arial"), local("Segoe UI"), local("Helvetica Neue");
@@ -232,6 +273,7 @@ kbd,
 }
 
 /* Exact Typography Classes from DESIGN.md */
+.pg-display-xl-sm,
 .pg-display-xl {
   font-family: var(--pg-font-sans);
   font-size: 40px;
@@ -239,6 +281,7 @@ kbd,
   line-height: 1.05;
   letter-spacing: -0.03em;
 }
+.pg-display-lg-sm,
 .pg-display-lg {
   font-family: var(--pg-font-sans);
   font-size: 34px;
@@ -246,6 +289,7 @@ kbd,
   line-height: 1.1;
   letter-spacing: -0.025em;
 }
+.pg-headline-lg-sm,
 .pg-headline-lg {
   font-family: var(--pg-font-sans);
   font-size: 26px;

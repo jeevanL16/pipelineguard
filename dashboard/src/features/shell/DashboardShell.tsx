@@ -9,6 +9,7 @@ import {
   SETTINGS_NAV_ITEM,
 } from "./navConfig";
 import { TopBar } from "./TopBar";
+import { ThemeSwitch } from "./ThemeSwitch";
 import { CommandPalette } from "./CommandPalette";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -264,6 +265,13 @@ export function DashboardShell({
           <SETTINGS_NAV_ITEM.icon size={16} strokeWidth={1.5} />
           {!isCompactRail && <span>{SETTINGS_NAV_ITEM.label}</span>}
         </NavLink>
+
+        {!isCompactRail && (
+          <div className="lg:hidden px-2 pt-1 flex items-center justify-between gap-2">
+            <span className="pg-label-sm text-[var(--pg-text-muted)]">Theme</span>
+            <ThemeSwitch compact />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -272,7 +280,7 @@ export function DashboardShell({
     <div className="min-h-screen flex bg-[var(--pg-canvas)] text-[var(--pg-text)]">
       {/* Desktop & tablet sidebar (56px collapsed / 232px expanded) */}
       <aside
-        className="hidden sm:block shrink-0 sticky top-0 h-screen border-r border-[var(--pg-line)] bg-[var(--pg-panel)] transition-[width] duration-200 ease-out"
+        className="hidden sm:block shrink-0 sticky top-0 h-screen border-r border-[var(--pg-line)] bg-[var(--pg-panel)] [transition:width_var(--pg-motion-view-change)] motion-reduce:transition-none"
         style={{
           width: collapsed ? "var(--pg-sidebar-collapsed-w)" : "var(--pg-sidebar-w)",
         }}

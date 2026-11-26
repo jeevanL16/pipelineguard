@@ -6,7 +6,7 @@ import { prefersReducedMotion, MOTION } from "../../../motion/motion";
 import { Badge, Button, CodePanel, Panel, Seal } from "../../../ui";
 import type { CodeLineAnnotation } from "../../../ui/Panel";
 
-async function sha256Hex(text: string): Promise<string> {
+async function sha256Hex(text: string): Promise<string | null> {
   if (typeof crypto !== "undefined" && crypto.subtle) {
     const bytes = new TextEncoder().encode(text);
     const buf = await crypto.subtle.digest("SHA-256", bytes);
@@ -14,7 +14,7 @@ async function sha256Hex(text: string): Promise<string> {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
   }
-  return "000000000000";
+  return null;
 }
 
 type DemoPhase = "scanning" | "found" | "diffing" | "rescanning" | "fixed";
@@ -41,6 +41,7 @@ export function HeroScanDemo() {
   const [focusedLine, setFocusedLine] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState<string>("");
   const [verifiedSha, setVerifiedSha] = useState<string | null>(null);
+  const [fixedCount, setFixedCount] = useState<number>(0);
   const [replayNonce, setReplayNonce] = useState<number>(0);
 
   const codeContainerRef = useRef<HTMLDivElement | null>(null);
@@ -108,11 +109,13 @@ export function HeroScanDemo() {
 
     if (prefersReducedMotion()) {
       setVerifiedSha(fixedCheck.findings.length === 0 ? digest : null);
+      setFixedCount(brokenFindings.length);
       setPhase("fixed");
       setAnnouncement("Fix applied. Re-scan complete: 0 findings.");
       return;
     }
 
+    setFixedCount(0);
     setPhase("diffing");
     setTimeout(() => {
       setPhase("rescanning");
@@ -121,9 +124,12 @@ export function HeroScanDemo() {
       setScanLine(1);
       const timer = window.setInterval(() => {
         line += 2;
+        const stepRatio = Math.min(1, line / fixedLen);
+        setFixedCount(Math.ceil(stepRatio * brokenFindings.length));
         if (line > fixedLen) {
           window.clearInterval(timer);
           setScanLine(null);
+          setFixedCount(brokenFindings.length);
           setVerifiedSha(fixedCheck.findings.length === 0 ? digest : null);
           setPhase("fixed");
           setAnnouncement("Fix applied. Re-scan complete: 0 findings.");
@@ -136,6 +142,7 @@ export function HeroScanDemo() {
 
   const handleRunAgain = () => {
     setVerifiedSha(null);
+    setFixedCount(0);
     setFocusedLine(null);
     setHoveredFindingId(null);
     setAnnouncement("");
@@ -231,7 +238,8 @@ export function HeroScanDemo() {
 
         <ul className="m-0 p-0 list-none space-y-2">
           {(phase === "scanning" ? visibleFindings : brokenFindings).map((f, idx) => {
-            const isFixed = phase === "rescanning" || phase === "fixed";
+            const isFixed =
+              phase === "fixed" || (phase === "rescanning" && idx < fixedCount);
             const isRelatedToHoveredLine =
               !isFixed && hoveredLine !== null && f.relatedLines.includes(hoveredLine);
             const descId = `hero-line-ref-${f.id}`;
@@ -291,9 +299,13 @@ export function HeroScanDemo() {
         </ul>
 
         <div className="pt-3 border-t border-[var(--pg-line)] flex flex-wrap items-center justify-between gap-3">
-          {phase === "fixed" && verifiedSha ? (
+          {phase === "fixed" ? (
             <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <Seal digest={verifiedSha} label="Verified" animate />
+              {verifiedSha ? (
+                <Seal digest={verifiedSha} label="Verified" animate />
+              ) : (
+                <Badge severity="PASS" label="0 findings · Pass" />
+              )}
               <Button variant="secondary" size="compact" onClick={handleRunAgain}>
                 <RotateCcw size={14} strokeWidth={1.5} />
                 Run scan again

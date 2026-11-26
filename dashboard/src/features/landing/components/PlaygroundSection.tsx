@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { analyzeWorkflowText } from "../../../rules/analyzer";
 import { PLAYGROUND_SAMPLES } from "../../../rules/sampleWorkflows";
-import type { AnalysisResult } from "../../../rules/schemas";
+import { getSeverityMeta, SEVERITY_META } from "../../../rules/severity";
+import type { AnalysisResult, Severity } from "../../../rules/schemas";
 import { Badge, Button, Panel } from "../../../ui";
 import { ConnectRepositoryForm } from "../../pipelines/components/ConnectRepositoryForm";
 import { useToast } from "../../../ui";
@@ -13,6 +14,7 @@ export function PlaygroundSection() {
     analyzeWorkflowText(PLAYGROUND_SAMPLES[0].yaml, "playground.yml")
   );
   const [showConnect, setShowConnect] = useState(false);
+  const [focusedLine, setFocusedLine] = useState<number | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
   const jobIdRef = useRef(0);
@@ -66,6 +68,24 @@ export function PlaygroundSection() {
 
   const lineCount = Math.max(1, yamlText.split(/\r?\n/).length);
 
+  const lineSeverityMap = useMemo(() => {
+    const map = new Map<number, Severity>();
+    if (result.parseErrorLine) {
+      map.set(result.parseErrorLine, "CRITICAL");
+      return map;
+    }
+    for (const f of result.findings) {
+      const lines = f.relatedLines.length > 0 ? f.relatedLines : f.line ? [f.line] : [];
+      for (const ln of lines) {
+        const existing = map.get(ln);
+        if (!existing || SEVERITY_META[f.severity].order < SEVERITY_META[existing].order) {
+          map.set(ln, f.severity);
+        }
+      }
+    }
+    return map;
+  }, [result]);
+
   const jumpToLine = (lineNum: number) => {
     const el = textareaRef.current;
     if (!el || lineNum < 1) return;
@@ -75,6 +95,7 @@ export function PlaygroundSection() {
       startIdx += allLines[i].length + 1;
     }
     const endIdx = startIdx + (allLines[lineNum - 1]?.length ?? 0);
+    setFocusedLine(lineNum);
     el.focus();
     el.setSelectionRange(startIdx, endIdx);
   };
@@ -129,11 +150,35 @@ export function PlaygroundSection() {
             <div
               ref={gutterRef}
               aria-hidden="true"
-              className="w-11 py-3 px-2 text-right select-none overflow-hidden pg-code-md text-[var(--pg-text-muted)] border-r border-[var(--pg-line)] bg-[var(--pg-panel)]"
+              className="w-12 py-3 px-0 text-right select-none overflow-hidden pg-code-md text-[var(--pg-text-muted)] border-r border-[var(--pg-line)] bg-[var(--pg-panel)] shrink-0"
             >
-              {Array.from({ length: lineCount }, (_, idx) => (
-                <div key={idx + 1}>{idx + 1}</div>
-              ))}
+              {Array.from({ length: lineCount }, (_, idx) => {
+                const ln = idx + 1;
+                const sev = lineSeverityMap.get(ln);
+                const meta = sev ? getSeverityMeta(sev) : null;
+                const isFocused = focusedLine === ln;
+                return (
+                  <div
+                    key={ln}
+                    className="pr-2.5 pl-1.5"
+                    style={{
+                      backgroundColor: meta
+                        ? meta.tintVar
+                        : isFocused
+                        ? "var(--pg-raised)"
+                        : undefined,
+                      color: meta ? meta.fgVar : undefined,
+                      borderLeft: meta
+                        ? `3px solid ${meta.fgVar}`
+                        : isFocused
+                        ? "3px solid var(--pg-primary)"
+                        : "3px solid transparent",
+                    }}
+                  >
+                    {ln}
+                  </div>
+                );
+              })}
             </div>
 
             <textarea
@@ -143,7 +188,10 @@ export function PlaygroundSection() {
               autoCapitalize="off"
               autoCorrect="off"
               value={yamlText}
-              onChange={(e) => setYamlText(e.target.value)}
+              onChange={(e) => {
+                setFocusedLine(null);
+                setYamlText(e.target.value);
+              }}
               onScroll={(e) => {
                 if (gutterRef.current) {
                   gutterRef.current.scrollTop = e.currentTarget.scrollTop;

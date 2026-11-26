@@ -6,8 +6,8 @@
 
 | Phase | Status | Started | Finished | Commit |
 | --- | --- | --- | --- | --- |
-| Phase A — Audit vs DESIGN.md | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| Phase B — Fix DESIGN.md Gaps | Not started | — | — | — |
+| Phase A — Audit vs DESIGN.md | Done | 2026-11-26 | 2026-11-26 | c594051 |
+| Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | pending commit |
 | 3D Phase 0 — Toolchain, Bundle & Assets | Not started | — | — | — |
 | 3D Phase 1 — Core Canvas & Theme | Not started | — | — | — |
 | 3D Phase 2 — HeroGateScene | Not started | — | — | — |
@@ -54,6 +54,33 @@
 - **Deviations from spec:** Spec paths `dashboard/design/*` are actually at repo root (`DESIGN.md`, `GATEHOUSE_3D_LAYER_SPEC.md`).
 - **Open questions:** None — all paths and tooling verified cleanly.
 
+### Phase B — Fix `DESIGN.md` Gaps
+
+- **Goal:** Fix audit findings A1–A13 in `dashboard/` cleanly without altering backend/security/API contracts or breaking `DESIGN.md` lint.
+- **Files changed:**
+  - `dashboard/index.html`, `dashboard/public/fonts/*.woff2`, `dashboard/src/styles/tokens.css` (self-hosted Latin WOFF2 `Instrument Sans` 400/500/600 & `JetBrains Mono` 400/500; WOFF2 `<link rel="preload">` for weights 400 & 600 totaling 34.3 kB; added explicit `.pg-display-xl-sm`, `.pg-display-lg-sm`, `.pg-headline-lg-sm` classes matching `DESIGN.md`).
+  - `dashboard/src/features/landing/components/LandingNav.tsx` (`h-16` 64px solid canvas bar, compact `ThemeSwitch` kept accessible on 360px mobile).
+  - `dashboard/src/features/shell/{TopBar,DashboardShell,ThemeSwitch}.tsx` (reduced-motion safe `motion-safe:animate-spin`, mobile-visible status indicator & nav drawer `ThemeSwitch`, normalized `rounded-[4px]`, token transition `--pg-motion-view-change`).
+  - `dashboard/src/ui/Tabs.tsx` & `dashboard/src/features/landing/components/FaqSection.tsx` (motion token alignment, reduced-motion guard, removed `"hero"` wording -> `"live scan demo"`).
+  - `dashboard/src/features/overview/OverviewPage.tsx` (removed synthetic `basePoints`; chart now aggregates real recorded event dates or renders empty state).
+  - `dashboard/src/features/landing/components/DashboardPreviewSection.tsx` (replaced mock IDs/records with deterministic `analyzeWorkflowText(HERO_BROKEN_WORKFLOW)` output and normalized radii to 4px/8px).
+  - `dashboard/src/features/landing/components/HeroScanDemo.tsx` (removed `"000000000000"` digest fallback, sequential `fixedCount` progression during rescanning).
+  - `dashboard/src/features/landing/components/PlaygroundSection.tsx` (severity-tinted flagged line markers and focused-line highlight in synchronized gutter).
+  - `dashboard/src/features/landing/components/RulesCatalogSection.tsx` (dynamic active rule count) & `dashboard/src/features/pipelines/PipelinesPage.tsx` (`Active` instead of `Protected` status label).
+  - `dashboard/src/features/pipelines/components/{ConnectRepositoryForm,ConnectRepositoryDialog}.tsx` (`motion-safe:animate-spin`, honest step CTA `Check repository` -> `Connect repository`, inline discard banner replacing native `window.confirm`).
+  - `dashboard/src/features/settings/SettingsPage.tsx` (per-field `error` / `aria-invalid` validation & invalid input focus) & `dashboard/src/features/findings/components/FindingsTable.tsx` (normalized radius + `tabIndex={0}` / `Enter` / `Space` keyboard row activation).
+- **Commands run (PASS / FAIL):**
+  - `cd d:\pipelineguard\dashboard; npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `cd d:\pipelineguard\dashboard; npm run lint` -> **PASS** (`LINT=0`)
+  - `cd d:\pipelineguard\dashboard; npm run build` -> **PASS** (`BUILD=0`, 3267 modules, 1.40s; `LandingPage` 96.23 kB / 27.39 kB gz, `OverviewPage` 365.24 kB / 105.73 kB gz, `index` 266.03 kB / 84.59 kB gz, `index.css` 40.24 kB / 8.30 kB gz)
+  - `cd d:\pipelineguard\dashboard; npx --yes esbuild scripts\verifyRules.ts --bundle --platform=node --format=esm | node --input-type=module -` -> **PASS** (`VERIFY_RULES=0`, `ALL RULE ENGINE FIXTURE TESTS PASSED`)
+  - Static Gatehouse compliance check (banned styles, unsafe `animate-spin`, non-spec radii, `"hero"` copy) -> **PASS** (`SCAN_DONE`, 0 hits)
+  - `cd d:\pipelineguard; git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+  - `cd d:\pipelineguard; npx --yes --package=@google/design.md designmd lint DESIGN.md` -> **PASS** (`DESIGN_LINT=0`, `0 errors, 25 warnings, 1 info`)
+- **Measurements:** Preloaded primary WOFF2 font weights 400 (16,860 B) + 600 (17,408 B) = 34,268 B (within DESIGN.md ~40 KB target). Landing chunk gzip: 27.39 kB.
+- **Deviations from spec:** Gap A14 (`eslint.config.js` TS/TSX coverage) deferred cleanly: `typescript-eslint@8.74.0` peer dependency is `typescript <6.1.0` whereas this repo uses `typescript@7.0.2`, so strict type/hygiene checking remains enforced by `tsc --noEmit` (`typescript@7.0.2`).
+- **Open questions:** None.
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -72,8 +99,10 @@
 | 2026-11-26 | Use repo-root `DESIGN.md` and `GATEHOUSE_3D_LAYER_SPEC.md` in place without duplicating files under `dashboard/design/`. | Avoid duplicate drifting specs; paths verified on disk. |
 | 2026-11-26 | Use `npx --yes --package=@google/design.md designmd lint DESIGN.md` (and verify bare `@google/design.md` output remains unchanged) to run the v0.4.0 Design linter cleanly. | Verified package bin mapping (`designmd`) avoids npx bin-name mismatch on Windows. |
 | 2026-11-26 | Classify Phase A findings A1–A14 strictly against `DESIGN.md` and hard constraints so Phase B touches only genuine `DESIGN.md` / correctness gaps before 3D Phase 0. | Matches requested three-stage execution order (A -> B -> 3D 0..7). |
+| 2026-11-26 | Copy `@fontsource/instrument-sans` & `@fontsource/jetbrains-mono` Latin `.woff2` subsets into `dashboard/public/fonts/` and preload weights 400 & 600 cleanly via `/fonts/...`. | Ensures 100% offline deterministic font delivery with zero external Google Fonts dependency and matching preload URLs (<35 kB for 400+600). |
+| 2026-11-26 | Keep `eslint.config.js` scoped to JS/JSX rather than forcing `--legacy-peer-deps` on `typescript-eslint@8.74.0` against `typescript@7.0.2`. | Clean npm resolution and native TypeScript 7 validation via `npx tsc --noEmit`. |
 
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit Phase A (`phase A: audit frontend against DESIGN.md`) and begin **Phase B** fixing Audit Findings A1–A14 cleanly in `dashboard/` while keeping `backend/`, `security/`, and `services/api.ts` untouched.
+- **Next action:** Commit Phase B and proceed to **3D Phase 0 — Toolchain, Bundle & Assets** (`three@0.187.0`, `@types/three@0.187.0`, `@react-three/fiber@9.8.2`, `@react-three/drei@10.7.9`, Vite `rolldownOptions.output.codeSplitting.groups`, build manifest isolation & lazy `<300 KB` gzip gate check).

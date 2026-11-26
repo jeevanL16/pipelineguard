@@ -9,9 +9,9 @@ export function LandingNav({
   onOpenConnect: (opener?: HTMLElement | null) => void;
 }) {
   return (
-    <header className="sticky top-0 z-40 h-14 bg-[var(--pg-canvas)]/95 border-b border-[var(--pg-line)]">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
-        <div className="flex items-center gap-8 min-w-0">
+    <header className="sticky top-0 z-40 h-16 bg-[var(--pg-canvas)] border-b border-[var(--pg-line)]">
+      <div className="max-w-[1200px] mx-auto px-3 sm:px-6 h-full flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-6 sm:gap-8 min-w-0">
           <a href="#top" className="no-underline shrink-0" aria-label="PipelineGuard home">
             <BrandWordmark />
           </a>
@@ -46,8 +46,8 @@ export function LandingNav({
           </nav>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="hidden sm:block">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div>
             <ThemeSwitch compact />
           </div>
           <NavLink to="/app" className="no-underline">

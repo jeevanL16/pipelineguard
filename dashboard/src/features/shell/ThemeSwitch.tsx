@@ -27,7 +27,7 @@ export function ThemeSwitch({ compact = false }: { compact?: boolean }) {
             aria-label={`${m.label} theme`}
             title={`${m.label} theme`}
             onClick={() => setPreference(m.value)}
-            className={`inline-flex items-center gap-1.5 h-7 px-2 rounded-[6px] pg-label-sm transition-colors duration-120 cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 h-7 px-2 rounded-[4px] pg-label-sm transition-colors duration-120 cursor-pointer ${
               active
                 ? "bg-[var(--pg-raised)] text-[var(--pg-text)]"
                 : "text-[var(--pg-text-muted)] hover:text-[var(--pg-text)]"

@@ -83,7 +83,7 @@ export function Tabs({
 
         <span
           aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] bg-[var(--pg-primary)] transition-transform duration-200 ease-out pointer-events-none"
+          className="absolute bottom-0 left-0 h-[2px] bg-[var(--pg-primary)] [transition:transform_var(--pg-motion-view-change)] motion-reduce:transition-none pointer-events-none"
           style={{
             width: `${indicator.width}px`,
             transform: `translateX(${indicator.left}px)`,

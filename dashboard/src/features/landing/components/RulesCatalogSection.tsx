@@ -17,11 +17,15 @@ export function RulesCatalogSection() {
     });
   };
 
+  const allActiveRules = useMemo(
+    () => WORKFLOW_RULES.filter((r) => r.category !== "system"),
+    []
+  );
+
   const catalogRules = useMemo(() => {
-    const active = WORKFLOW_RULES.filter((r) => r.category !== "system");
-    if (selectedSevs.length === 0) return active;
-    return active.filter((r) => selectedSevs.includes(r.severity));
-  }, [selectedSevs]);
+    if (selectedSevs.length === 0) return allActiveRules;
+    return allActiveRules.filter((r) => selectedSevs.includes(r.severity));
+  }, [allActiveRules, selectedSevs]);
 
   return (
     <section id="rules" className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-6">
@@ -31,7 +35,7 @@ export function RulesCatalogSection() {
             Workflow rules catalog
           </h2>
           <p className="pg-body-md text-[var(--pg-text-muted)] m-0">
-            All {WORKFLOW_RULES.length - 1} active workflow checks generated directly from the rule registry.
+            All {allActiveRules.length} active workflow checks generated directly from the rule registry.
           </p>
         </div>
 

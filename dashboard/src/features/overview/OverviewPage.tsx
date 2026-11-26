@@ -91,21 +91,30 @@ export function OverviewPage() {
 
   const totalOpenForBar = Math.max(1, criticalCount + highCount + mediumCount + lowCount);
 
-  // Single-series run risk trend anchored on actual findings/runs
+  // Single-series run risk trend strictly grouped from real recorded finding dates
   const chartData = useMemo(() => {
-    const scores = events.map((e) => e.risk_score);
-    const mean =
-      scores.length > 0
-        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-        : 0;
-    const basePoints = [
-      { day: "Day 1", risk: Math.max(0, Math.min(100, mean - 12)) },
-      { day: "Day 4", risk: Math.max(0, Math.min(100, mean - 4)) },
-      { day: "Day 7", risk: Math.max(0, Math.min(100, mean + 8)) },
-      { day: "Day 10", risk: Math.max(0, Math.min(100, mean + 2)) },
-      { day: "Today", risk: mean },
-    ];
-    return basePoints;
+    const byDay = new Map<string, { sum: number; count: number; ts: number }>();
+    for (const evt of events) {
+      const rawDate = evt.timestamp || evt.created_at;
+      const ms = rawDate ? Date.parse(rawDate) : NaN;
+      if (Number.isNaN(ms)) continue;
+      const d = new Date(ms);
+      const dayKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      const existing = byDay.get(dayKey);
+      if (existing) {
+        existing.sum += evt.risk_score;
+        existing.count += 1;
+      } else {
+        byDay.set(dayKey, { sum: evt.risk_score, count: 1, ts: ms });
+      }
+    }
+    return Array.from(byDay.entries())
+      .sort((a, b) => a[1].ts - b[1].ts)
+      .slice(-14)
+      .map(([day, agg]) => ({
+        day: day.slice(5),
+        risk: Math.round(agg.sum / agg.count),
+      }));
   }, [events]);
 
   const activeFinding = selectedFindingId
@@ -293,22 +302,31 @@ export function OverviewPage() {
         </Panel>
       </div>
 
-      {/* Run Risk Single-Line Chart (no gradient fill, one series, threshold line, direct endpoints) */}
+      {/* Run Risk Single-Line Chart (no gradient fill, one series, threshold line, real recorded dates) */}
       <Panel className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="pg-headline-sm text-[var(--pg-text)] m-0">
-              Run risk, last 14 days
+              Mean finding risk by date
             </h2>
             <p className="pg-body-sm text-[var(--pg-text-muted)] m-0 mt-0.5">
-              Mean finding risk index against the 70-point CI gate threshold.
+              Mean risk score across recorded findings against the 70-point CI gate threshold.
             </p>
           </div>
           <div className="pg-data-md text-[var(--pg-text-muted)]">
-            Start {chartData[0].risk}/100 · Current {chartData[chartData.length - 1].risk}/100
+            {chartData.length === 0
+              ? "No timestamped findings yet"
+              : chartData.length === 1
+              ? `${chartData[0].day}: ${chartData[0].risk}/100`
+              : `Start ${chartData[0].risk}/100 · Latest ${chartData[chartData.length - 1].risk}/100`}
           </div>
         </div>
 
+        {chartData.length === 0 ? (
+          <div className="h-[180px] flex items-center justify-center rounded-[8px] border border-[var(--pg-line)] bg-[var(--pg-canvas)] pg-body-sm text-[var(--pg-text-muted)]">
+            Daily mean risk renders once timestamped findings are recorded.
+          </div>
+        ) : (
         <div className="h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 12, right: 20, left: -16, bottom: 0 }}>
@@ -360,6 +378,7 @@ export function OverviewPage() {
             </LineChart>
           </ResponsiveContainer>
         </div>
+        )}
       </Panel>
 
       <FindingDrawer

@@ -71,9 +71,9 @@ export function TopBar({
           <ThemeSwitch compact />
         </div>
 
-        {/* Static status dot + text + relative time (no pulsing dot per DESIGN.md) */}
+        {/* Static status indicator + accessible text + relative time (no pulsing dot per DESIGN.md) */}
         <div
-          className="hidden sm:inline-flex items-center gap-2 px-2.5 h-8 rounded-[8px] border border-[var(--pg-line)] bg-[var(--pg-panel)] pg-body-sm"
+          className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 h-8 rounded-[8px] border border-[var(--pg-line)] bg-[var(--pg-panel)] pg-body-sm"
           title={
             isDegraded
               ? "Two or more consecutive status checks failed"
@@ -105,7 +105,7 @@ export function TopBar({
           <RefreshCw
             size={15}
             strokeWidth={1.5}
-            className={isFetching ? "animate-spin text-[var(--pg-primary)]" : ""}
+            className={isFetching ? "motion-safe:animate-spin text-[var(--pg-primary)]" : ""}
           />
         </button>
       </div>

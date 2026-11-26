@@ -329,7 +329,7 @@ export function ConnectRepositoryForm({
       {/* Resolving state */}
       {resolving && (
         <div className="flex items-center gap-2 pg-body-sm text-[var(--pg-text-muted)]">
-          <Loader2 size={14} strokeWidth={1.5} className="animate-spin text-[var(--pg-primary)]" />
+          <Loader2 size={14} strokeWidth={1.5} className="motion-safe:animate-spin text-[var(--pg-primary)]" />
           <span>Checking repository metadata…</span>
         </div>
       )}
@@ -453,10 +453,10 @@ export function ConnectRepositoryForm({
         <Button
           type="submit"
           variant="primary"
-          pending={isPending}
-          pendingText="Connecting…"
+          pending={isPending || resolving}
+          pendingText={revealedFields ? "Connecting…" : "Checking…"}
         >
-          Connect repository
+          {revealedFields ? "Connect repository" : "Check repository"}
         </Button>
       </div>
     </form>

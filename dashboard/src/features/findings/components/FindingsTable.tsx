@@ -302,7 +302,7 @@ export function FindingsTable({
           <div
             role="group"
             aria-label="Row density"
-            className="inline-flex items-center rounded-[6px] border border-[var(--pg-line)] bg-[var(--pg-canvas)] p-0.5"
+            className="inline-flex items-center rounded-[8px] border border-[var(--pg-line)] bg-[var(--pg-canvas)] p-0.5"
           >
             {(["compact", "default", "comfortable"] as const).map((d) => (
               <button
@@ -389,11 +389,20 @@ export function FindingsTable({
                   return (
                     <tr
                       key={row.id}
+                      tabIndex={0}
                       onClick={() => {
                         setFocusedIndex(idx);
                         onSelectFinding(evt.event_id);
                       }}
-                      className={`cursor-pointer transition-colors duration-120 hover:bg-[var(--pg-raised)] ${
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setFocusedIndex(idx);
+                          onSelectFinding(evt.event_id);
+                        }
+                      }}
+                      className={`cursor-pointer transition-colors duration-120 hover:bg-[var(--pg-raised)] focus-visible:outline-2 focus-visible:outline-[var(--pg-primary)] focus-visible:outline-offset-[-2px] ${
                         DENSITY_ROW_HEIGHT[density]
                       } ${isSelected || isFocused ? "bg-[var(--pg-raised)]" : ""} ${
                         isFlashing ? "pg-row-flash" : ""

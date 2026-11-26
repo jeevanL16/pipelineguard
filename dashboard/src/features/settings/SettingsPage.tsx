@@ -1,4 +1,4 @@
-import React, { useActionState, useState } from "react";
+import React, { useActionState, useRef, useState } from "react";
 import { z } from "zod";
 import { Badge, Button, Field, Panel, useToast } from "../../ui";
 import {
@@ -34,6 +34,9 @@ export function SettingsPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
+  const userInputRef = useRef<HTMLInputElement | null>(null);
+  const passInputRef = useRef<HTMLInputElement | null>(null);
 
   const runConnectionTest = async () => {
     setTesting(true);
@@ -84,9 +87,21 @@ export function SettingsPage() {
   const [, authFormAction, authPending] = useActionState(async () => {
     const check = LoginSchema.safeParse({ username, password });
     if (!check.success) {
+      const nextErrs: { username?: string; password?: string } = {};
+      for (const issue of check.error.issues) {
+        const key = issue.path[0];
+        if (key === "username" && !nextErrs.username) nextErrs.username = issue.message;
+        if (key === "password" && !nextErrs.password) nextErrs.password = issue.message;
+      }
+      setFieldErrors(nextErrs);
       setAuthError(check.error.issues[0]?.message || "Enter valid credentials.");
+      requestAnimationFrame(() => {
+        if (nextErrs.username) userInputRef.current?.focus();
+        else if (nextErrs.password) passInputRef.current?.focus();
+      });
       return null;
     }
+    setFieldErrors({});
     setAuthError(null);
     try {
       await login(check.data.username, check.data.password);
@@ -206,22 +221,36 @@ export function SettingsPage() {
             )}
 
             <Field
+              ref={userInputRef}
               id="settings-auth-user"
               label="Username"
               autoComplete="username"
               disabled={authPending}
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              error={fieldErrors.username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (fieldErrors.username && e.target.value.trim()) {
+                  setFieldErrors((p) => ({ ...p, username: undefined }));
+                }
+              }}
             />
 
             <Field
+              ref={passInputRef}
               id="settings-auth-pass"
               label="Password"
               type="password"
               autoComplete="current-password"
               disabled={authPending}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              error={fieldErrors.password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password && e.target.value.length > 0) {
+                  setFieldErrors((p) => ({ ...p, password: undefined }));
+                }
+              }}
             />
 
             <Button type="submit" variant="primary" pending={authPending} pendingText="Signing in…">
