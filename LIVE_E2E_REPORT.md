@@ -101,3 +101,40 @@
 3. **Dialog background focus race (`aria-hidden` warning) in [Overlay.tsx](file:///d:/pipelineguard/dashboard/src/ui/Overlay.tsx) & [ConnectRepositoryForm.tsx](file:///d:/pipelineguard/dashboard/src/features/pipelines/components/ConnectRepositoryForm.tsx):** Moved focus synchronously into `#connect-repo-url` via Radix `onOpenAutoFocus` before Radix sets `aria-hidden` on background regions; re-verified with zero warnings.
 4. **Collapsed sidebar link accessibility in [DashboardShell.tsx](file:///d:/pipelineguard/dashboard/src/features/shell/DashboardShell.tsx):** Added `aria-label` to sidebar `<NavLink>` items when collapsed (`56px`); re-verified every link's accessible name in the accessibility tree.
 5. **Playground syntax error score badge in [PlaygroundSection.tsx](file:///d:/pipelineguard/dashboard/src/features/landing/components/PlaygroundSection.tsx):** Updated header status to display `"Syntax error"` instead of `"Risk 40/100 · Grade C"` when YAML parsing fails; re-verified live.
+
+---
+
+## Gatehouse 3D Layer Verification (`GATEHOUSE_3D_LAYER_SPEC.md` §9 & §11)
+
+- **Verification Date:** 2026-11-26
+- **Scripts:** [checkManifest3D.mjs](file:///d:/pipelineguard/dashboard/scripts/checkManifest3D.mjs), [verifyPhase7Full.mjs](file:///d:/pipelineguard/dashboard/scripts/verifyPhase7Full.mjs)
+- **Vitest Suite (`npm test -- --run`):** `5` test files passed, `15/15` tests passed (`core.test.ts`, `sequenceData.test.ts`, `heroScanStore.test.ts`, `graph.test.ts`, `phase4Data.test.ts`).
+- **Design Lint:** `npx --yes --package=@google/design.md designmd lint DESIGN.md` -> `0 errors` (`25 warnings`, `1 info`).
+
+### Bundle Size & Isolation (`dist/.vite/manifest.json`)
+
+| Metric | Measured Production Result | Spec Budget / Rule |
+| --- | --- | --- |
+| Manifest checked entries | `7` | All entries isolated (`isolationPassed: true`) |
+| Landing static closure | `249.04 KiB` gz (`LandingPage` chunk `15.26 kB` gz; `index` `174.91 kB` gz) | No `three` or `@react-three` in static closure |
+| Lazy `core` (`three` / R3F / Drei) chunk | `237.33 KiB` gz (`245.05 kB` Vite gz) | Route/viewport lazy only |
+| Lazy scene chunks (6 scenes) | `GateSequence3D` `2.65`, `ArchitectureFlow3D` `2.29`, `HeroGateScene` `2.03`, `RuleCatalog3D` `1.91`, `AttackPath3D` `1.54`, `LedgerChain3D` `1.17` KiB gz | Total **248.92 KiB** gz combined lazy 3D (`<= 280 KB`) |
+| `/app` + non-Artifacts routes (`dark` & `light`) | `0` requests for any 3D chunk, `0` console/page errors | `/app/*` never downloads landing 3D bundle |
+| `/app/artifacts` lazy trigger | `0` 3D requests on initial load; `2` requests (`core` + `LedgerChain3D`) only after Web Crypto digest verification | Route-scoped opt-in on user digest |
+| Production `?scene3d=force` guard | `0` canvases mounted when `failIfMajorPerformanceCaveat: true` applies | Production build ignores `force` |
+
+### WebGL Draw Calls, Idle GPU Frames & Determinism (`VITE_E2E=1`)
+
+| Scene | Draw Calls | Triangles | 5s Idle Delta (`clears` / `draws`) | Keyboard / Interaction Parity |
+| --- | --- | --- | --- | --- |
+| `HeroGateScene` (`/`) | `5` (`<= 12`) | `227` | `0` / `0` | `"Show fix"` (`Enter`): 7 staggered rows + real SHA-256 Seal |
+| `GateSequence3D` (`#how-it-works`) | `9` (`<= 12`) | `345` | `0` / `0` | `"Show sequence again"` (`Enter`) replays stations |
+| `ArchitectureFlow3D` (`#architecture`) | `4` (`<= 12`) | `648` | `0` / `0` | `"Trace a finding"` (`Enter`), `sr-only` list focus, `"Flat"` (`Space`) -> `0` canvases |
+| `AttackPath3D` (`#incidents`) | `1` (`<= 12`) | `108` | `0` / `0` | `"With guard"` (`Enter`) halts packet + displays `PG-WF-019 blocked` |
+| `RuleCatalog3D` (`#rules`) | `5` (`<= 12`) | `402` | `0` / `0` | `"Critical"` chip (`Enter`) filters to `5` rows; chip `001` highlights `PG-WF-001` |
+| `LedgerArtifactScene3D` (`/app/artifacts`) | `1` (`<= 12`) | `48` | `0` / `0` | Real Web Crypto SHA-256 digest drives 4th block drop |
+
+### Visual Regression, Fallbacks & Console Hygiene
+
+- **Visual Regression (`?scene3d=force` + `prefers-reduced-motion: reduce`, DPR `1`):** Verified `dark_1440`, `light_1440`, `dark_768`, and `light_768` with `overflow: false`, `imgsOk: true` (all Preview `.webp` assets loaded), and `errorsCount: 0`; repeat-render comparison of `#architecture` and `#rules` produced pixel difference ratios of **`0`** (`<= 0.005`).
+- **Accessibility & Environmental Fallbacks (2D Parity):** Verified `--disable-gpu --disable-webgl --disable-webgl2` (`0` canvases), `forcedColors: "active"` (`0` canvases), `prefers-contrast: more` (`0` canvases), `navigator.connection.saveData = true` (`0` canvases), `?scene3d=off` (`0` canvases), `prefers-reduced-motion: reduce` (static final pose), and `360x800` mobile across `/`, `/app`, `/app/findings`, `/app/artifacts`, `/app/pipelines` (`overflow: false`, `0` canvases, `0` console errors).

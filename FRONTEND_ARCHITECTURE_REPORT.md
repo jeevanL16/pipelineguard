@@ -1,9 +1,9 @@
 # PipelineGuard Gatehouse (v2): Frontend Architecture, Report & Improvement Guide
 
-> **Stack:** React 19 + TypeScript + Vite 8.3 + Tailwind CSS v4 + TanStack Query v5 + TanStack Table v9 (`/legacy` adapter) + Radix UI (`dialog`, `tabs`, `tooltip`, `select`) + `cmdk` + Motion (`LazyMotion`) + Zod + `js-yaml`  
+> **Stack:** React 19 + TypeScript 7 + Vite 8.3 + Tailwind CSS v4 + Three.js (`three` / `@react-three/fiber` / `@react-three/drei`, lazy isolated) + TanStack Query v5 + TanStack Table v9 (`/legacy` adapter) + Radix UI (`dialog`, `tabs`, `tooltip`, `select`) + `cmdk` + Motion (`LazyMotion`) + Zod + `js-yaml`  
 > **Directory:** `dashboard/src/`  
-> **Design Spec:** [DESIGN.md](./DESIGN.md)  
-> **Live Test Report:** [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md)
+> **Specs:** [DESIGN.md](./DESIGN.md) · [GATEHOUSE_3D_LAYER_SPEC.md](./GATEHOUSE_3D_LAYER_SPEC.md)  
+> **Live Test & Verification Reports:** [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md) · [BUILD_TRACKER](./dashboard/docs/BUILD_TRACKER.md)
 
 ---
 
@@ -13,10 +13,16 @@
 dashboard/src/
 ├── main.jsx                          # Entrypoint mounting <AppRouter />
 ├── index.css                         # Tailwind v4 + DESIGN.md CSS tokens
-├── styles/tokens.css                 # Semantic --pg-* dark/light tokens, .pg-force-dark, typography, view() gate line
+├── styles/tokens.css                 # Semantic --pg-* dark/light tokens, .pg-force-dark, self-hosted fonts, CSS 3D preview & view() gate line
 ├── motion/
 │   ├── motion.ts                     # MOTION timing/easing constants + runViewTransition()
 │   └── MotionProvider.tsx            # Async LazyMotion (domMax strict mode)
+├── three/                            # Isolated Gatehouse isometric WebGL & state layer (lazy chunks, frameloop="demand")
+│   ├── core/                         # Scene3D, useScene3DMode, liveCanvasBudget (<=3), useGatehouseTheme,
+│   │                                 # useSectionProgress, useInvalidateWhile, useProjectedAnchors, motion3d, shading, glyphs
+│   ├── state/heroScanStore.ts        # Shared HeroScanDemo <-> HeroGateScene state (staggered fixedCount + digest)
+│   └── scenes/                       # HeroGateScene, GateSequence3D, ArchitectureFlow3D (graph.ts),
+│                                     # RuleCatalog3D, AttackPath3D (incidentPaths.ts), LedgerChain3D (ArtifactsPage)
 ├── app/
 │   ├── theme.tsx                     # System / Light / Dark switcher + static critical favicon sync
 │   ├── queryClient.ts                # TanStack Query (15s polling, paused in hidden tabs)
@@ -26,7 +32,7 @@ dashboard/src/
 │   ├── severity.ts                   # Single mapping: severity -> color var, SVG shape, order, weight
 │   ├── registry.ts                   # PG-WF-001..023 + PG-WF-900 aligned with security/workflow/rules.py
 │   ├── parser.ts                     # js-yaml line-tracking parser + steps: structural error locator
-│   ├── analyzer.ts                   # Detectors + # pipelineguard-ignore + risk/grade scoring
+│   ├── analyzer.ts                   # Detectors + # pipelineguard-ignore + risk/grade scoring + CI_GATE_THRESHOLD (70)
 │   ├── sampleWorkflows.ts            # Hero broken/fixed YAML, 3 Playground samples, Secret rules
 │   └── scanner.worker.ts             # Web Worker for >200-line workflow YAML
 ├── ui/                               # Reusable accessible Gatehouse UI primitives (Radix-backed)
@@ -41,22 +47,28 @@ dashboard/src/
 │   └── Toast.tsx                     # Animated Toast viewport with 6s Undo action
 ├── services/api.ts                   # Typed REST client (latency ms, X-Request-Id, repo resolve fallback)
 └── features/
-    ├── landing/                      # Public route / (isolated from Recharts/Query/Table bundles)
+    ├── landing/                      # Public route / (isolated from Recharts/Query/Table; lazy-loads Three scenes idle/near)
     │   ├── LandingPage.tsx
-    │   └── components/               # LandingNav, HeroScanDemo, IncidentTabsSection, PlaygroundSection,
-    │                                 # HowItWorksSection, RulesCatalogSection, DashboardPreviewSection, FaqSection
+    │   └── components/               # LandingNav, HeroScanDemo, HeroGateSlot, ArchitectureSection, IncidentTabsSection,
+    │                                 # PlaygroundSection, HowItWorksSection, RulesCatalogSection, DashboardPreviewSection, FaqSection
     ├── shell/                        # DashboardShell (232px/56px/mobile drawer), TopBar, CommandPalette, ThemeSwitch
     ├── overview/OverviewPage.tsx     # Needs Attention queue, Open Now bar, Run Risk line chart, First-run guide
     ├── findings/                     # FindingsPage, NeedsAttentionQueue, FindingsTable, FindingDrawer, queries, utils
     ├── incidents/IncidentsPage.tsx   # High/Critical active incident queue sharing drawer
     ├── workflows/WorkflowsPage.tsx   # 23 active workflow rules table + category/severity chips
     ├── secrets/SecretsPage.tsx       # Masked secret findings + security/secrets/severity.py rules
-    ├── artifacts/ArtifactsPage.tsx   # Web Crypto SHA-256 verifier + session log
+    ├── artifacts/ArtifactsPage.tsx   # Web Crypto SHA-256 verifier + session log + lazy LedgerArtifactScene3D
     ├── pipelines/                    # PipelinesPage + ConnectRepositoryForm (useActionState + Zod) + Dialog
     ├── runs/RunsPage.tsx             # Sortable execution history table
     ├── audit/AuditLogPage.tsx        # Sortable immutable audit trail linking back to Findings drawer
     └── settings/SettingsPage.tsx     # Live latency diagnostics table, ThemeSwitch, optional JWT login
 ```
+
+### 1b. Gatehouse 3D Layer Architecture (`GATEHOUSE_3D_LAYER_SPEC.md`)
+- **Matte Orthographic Geometry:** Zero scene lights, zero shadows, zero glow/glass/bloom; `MeshBasicMaterial` with vertex-shaded `UNIT_SHADED_BOX_GEOMETRY` renders top/left/front shaded slabs in **1–9 draw calls** and **48–648 triangles** per scene.
+- **Demand Rendering (`frameloop="demand"`):** Scenes step via `useInvalidateWhile()` only while transitioning and settle cleanly to **0 GPU draw calls / 0 clears over 5s idle**, enforced alongside a global max-3 live canvas pool (`liveCanvasBudget.ts`).
+- **Bundle Isolation:** `LandingPage` lazy chunk (`15.26 kB` gz) and initial app shell stay isolated from Three/R3F (`landingStaticClosureGzKb: 249.04 KiB`); combined lazy 3D chunks measure **`248.92 KiB` gz** (below the 280 KB target). Dashboard routes `/app`, `/app/findings`, `/app/pipelines`, and `/app/runs` make zero requests for any Three/R3F chunk; `/app/artifacts` lazy-loads `LedgerChain3D` only after Web Crypto digest verification.
+- **Strict Fallback Parity:** Every scene degrades cleanly to an identical-information 2D DOM view under `--disable-gpu` / missing WebGL2, `forced-colors`, `prefers-contrast: more`, `prefers-reduced-motion`, `<768px`, `navigator.connection.saveData`, or `?scene3d=off`.
 
 ---
 
@@ -89,15 +101,14 @@ During live Chrome E2E verification (`LIVE_E2E_REPORT.md`) and code review, the 
 
 ## 4. What Can Be Improved Next (Visual Polish, Animations & Remaining Tech Debt)
 
-### A. Visual & Landing Page Polish (Within Gatehouse Calm Aesthetic)
-1. **Real Repository Workflow Preview inside Pipelines (`/app/pipelines`):** When GitHub public resolution detects `.github/workflows/*.yml`, fetch and optionally run the browser YAML rules engine directly against the repo's real `ci.yml` inside a preview tab instead of waiting for CI runner ingestion.
-2. **Real Syntax Token Coloring inside `CodePanel`:** Currently `CodePanel` highlights line numbers, diff annotations, and severity ranges on monospace text cleanly. Lightweight keyword coloring for YAML keys (`on:`, `permissions:`, `uses:`, `run:`, `${{ ... }}`) using semantic muted/text/verdigris CSS vars would make code inspection significantly faster to scan visually.
-3. **Captured Real Dashboard Screenshot in `DashboardPreviewSection.tsx`:** Per `DESIGN.md` Quality Gates, run Playwright CI screenshots of the real dashboard in both light & dark modes rather than a static JSX structural preview, overlaid with the 3 interactive keyboard-focusable hotspots.
-4. **Smooth `diff-swap` Line Transition in `HeroScanDemo`:** Right now `"Show fix"` flips cleanly after `200ms`; adding a keyed per-line subtle height/opacity transition cleanly reveals removed vs added lines even more legibly.
-5. **Hero Font Preloading & Self-Hosting (`<60 KB` Budget):** Currently Google Fonts (`Instrument Sans` + `JetBrains Mono`) are linked over CDN; self-hosting subsetted `.woff2` files locally guarantees zero external font latency and works completely offline.
+### A. Completed Visual & Landing Polish (Phases B–7)
+1. **Self-Hosted Preloaded Fonts (`dashboard/public/fonts/`):** Copied Latin `@fontsource/instrument-sans` and `@fontsource/jetbrains-mono` `.woff2` subsets locally (`34,268 B` for preloaded 400+600 subsets) eliminating external Google Fonts CDN dependency.
+2. **Playwright-Captured CSS-3D Preview Layers (`DashboardPreviewSection.tsx`):** Captured 12 `.webp` screenshots (light/dark, 1x/2x) from the live `/app` Overview routes paired with CSS `perspective: 1200px`, `preserve-3d`, and `@supports (animation-timeline: view())` depth separation plus 3 interactive DOM hotspot buttons.
+3. **Orthographic Matte 3D Architecture & Ledger Scenes (`src/three/scenes/`):** Implemented `HeroGateScene` (synced via `heroScanStore`), `GateSequence3D`, `ArchitectureFlow3D`, `RuleCatalog3D`, `AttackPath3D`, and lazy route-scoped `LedgerArtifactScene3D`, all obeying zero-glow/zero-idle-GPU rules.
+4. **Smooth `diff-swap` & Staggered `"Show fix"` Sequence:** `HeroScanDemo` now steps `fixedCount` top-to-bottom at `50ms` per row in sync with `HeroGateScene` and stamps `Seal` exclusively when `crypto.subtle` yields a real SHA-256 digest.
 
-### B. Remaining Technical / UX Gaps
-1. **Overview `Run risk, last 14 days` Chart Anchor (`OverviewPage.tsx` lines 78–92):** Because backend `PipelineRun` rows (`backend/app/schemas/pipeline_run.py`) do not currently store a per-run `risk_score` column, the 5-point chart currently derives historical points (`mean - 12` .. `mean`) from the current findings' average risk score. Adding a real backend `/api/runs/risk-series` endpoint (or `risk_score` field on `PipelineRun`) will turn this chart into true historical telemetry.
-2. **Evidence Drawer Code Context (`FindingDrawer.tsx` + `utils.ts`):** Backend `SecurityEvent` rows store a single `description` string rather than the exact line number or workflow file snapshot. Right now `FindingDrawer` renders `rule.example` from `registry.ts` paired with the finding's `source` and `pipeline_id`. Extending the backend finding ingestion payload with optional `file_path`, `line`, and `snippet` metadata would show the user's exact commit snippet inside the drawer.
-3. **Interactive Accessibility (`axe-core`) & Snapshot CI Gate:** Add `@playwright/test` + `@axe-core/playwright` scripts under `dashboard/` to automate light/dark `360px` screenshots, contrast checks, and reduced-motion verification in CI.
-4. **TypeScript ESLint Coverage (`eslint.config.js`):** Currently `tsc --noEmit` checks `.ts/.tsx` while ESLint runs over `.js/.jsx` files. Adding `typescript-eslint` extends React Hooks / unused variable linting across `.ts/.tsx` as well.
+### B. Remaining Optional Polish & Backend Enhancements
+1. **Real Repository Workflow Preview inside Pipelines (`/app/pipelines`):** When GitHub public resolution detects `.github/workflows/*.yml`, fetch and optionally run the browser YAML rules engine directly against the repo's real `ci.yml` inside a preview tab instead of waiting for CI runner ingestion.
+2. **Overview `Run risk, last 14 days` Chart Anchor (`OverviewPage.tsx`):** Because backend `PipelineRun` rows (`backend/app/schemas/pipeline_run.py`) do not currently store a per-run `risk_score` column, the 5-point chart currently derives historical points from the current findings' average risk score. Adding a real backend `/api/runs/risk-series` endpoint (or `risk_score` field on `PipelineRun`) will turn this chart into true historical telemetry.
+3. **Evidence Drawer Code Context (`FindingDrawer.tsx` + `utils.ts`):** Backend `SecurityEvent` rows store a single `description` string rather than exact file/line snapshots. Extending backend ingestion payloads with optional `file_path`, `line`, and `snippet` metadata would surface the commit's exact YAML lines inside the drawer.
+4. **TypeScript ESLint Coverage (`eslint.config.js`):** Currently `npx tsc --noEmit` enforces strict checking on `.ts/.tsx` while ESLint covers `.js/.jsx` files. Adding `typescript-eslint` extends ESLint rules across `.ts/.tsx` once TypeScript 7 peer ranges stabilize.

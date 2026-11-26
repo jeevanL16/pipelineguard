@@ -4,7 +4,7 @@
 
 ## Handoff State
 
-- **Current Objective:** Complete (Tasks 0.1 through 9 verified end-to-end, including live Chrome E2E demo connecting `https://github.com/jeevanL16/eventgenie` and post-fix re-verification).
+- **Current Objective:** Complete (Tasks 0.1 through 9 + Gatehouse 3D Spec Phases 0–7 verified end-to-end; backend `backend/`, `security/`, API contracts, DB, and `dashboard/src/services/api.ts` untouched).
 - **Modified / Created Files:**
   - `GATEHOUSE_CHECKLIST.md`, `LIVE_E2E_REPORT.md` — Checklist & full live E2E browser verification report.
   - **Tokens, Theme, Motion & Brand (`Task 1` `[x]`):**
@@ -38,10 +38,10 @@
     - `dashboard/src/features/runs/RunsPage.tsx`
     - `dashboard/src/features/audit/AuditLogPage.tsx`
     - `dashboard/src/features/settings/SettingsPage.tsx`
-- **Next Immediate Step:** Ready for review and git commit if desired. Local Vite (`http://127.0.0.1:5173`) and FastAPI (`http://127.0.0.1:8000`) remain live.
+- **Next Immediate Step:** Ready for final review (`PHASE7_PROD=0`, `PHASE7_E2E=0`, `MANIFEST=0`, `VITEST=15/15`, `TSC=0`, `LINT=0`, `DESIGN.md` lint `0 errors`).
 - **Blockers / Notes:**
-  - Backend (`backend/`, `security/`) verified clean and untouched (`git status --short backend/ security/`).
-  - SQLite now holds live-tested `pipe-eventgenie` (from `https://github.com/jeevanL16/eventgenie`) plus audit records from live `OPEN` → `RESOLVED` → `OPEN` status transition tests.
+  - Backend (`backend/`, `security/`) verified clean and untouched (`git diff --stat -- backend security` empty).
+  - SQLite now holds live-tested `pipe-eventgenie` (from `https://github.com/jeevanL16/eventgenie`) plus audit records from live `OPEN` -> `RESOLVED` -> `OPEN` status transition tests.
 
 ---
 
@@ -106,7 +106,17 @@
 - [x] **8.5** Build `RunsPage.tsx`, `AuditLogPage.tsx`, and `SettingsPage.tsx` (connection test table with Request / Status / Response time ms, theme selector, optional JWT sign-in form).
 
 ### Task 9: Final Verification & Quality Gates
-- [x] **9.1** Copy & Token Hygiene Audit (zero stray hex values in components, zero banned strings/UI patterns).
-- [x] **9.2** Verify `tsc --noEmit`, `npm run lint`, `npm run build` (`vite build`), and `verifyRules.ts`.
+- [x] **9.1** Copy & Token Hygiene Audit (self-hosted Latin `.woff2` fonts in `dashboard/public/fonts/`, zero stray hex values in components, `npx --yes --package=@google/design.md designmd lint DESIGN.md` = `0 errors`).
+- [x] **9.2** Verify `tsc --noEmit`, `npm run lint`, `npm test -- --run` (15/15 Vitest unit tests), `npm run build` (`vite build`), `node scripts/checkManifest3D.mjs` (`248.92 KiB` combined lazy 3D gz, `isolationPassed: true`), and `verifyRules.ts`.
 - [x] **9.3** Live end-to-end Chrome verification across Landing (`/`), Light/Dark themes, `360×800` responsive viewport, live connection of `https://github.com/jeevanL16/eventgenie`, all `/app/*` routes, Command Palette, keyboard navigation, Drawer, status transitions, and zero console errors after final edits.
 - [x] **9.4** Write [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md) and finalize [GATEHOUSE_CHECKLIST.md](./GATEHOUSE_CHECKLIST.md).
+
+### Task 10: Gatehouse 3D Layer (`GATEHOUSE_3D_LAYER_SPEC.md` Phases 0–7)
+- [x] **10.0 (Phase 0)** Install `three`, `@types/three`, `@react-three/fiber`, `@react-three/drei`, `vitest`, `playwright`; enable `build.manifest: true`; implement `src/three/core/*` (`Scene3D`, `useScene3DMode`, `liveCanvasBudget`, `useGatehouseTheme`, `useSectionProgress`, `useInvalidateWhile`, `useProjectedAnchors`, `motion3d`, `shading`, `glyphs`) and bundle isolation checker `dashboard/scripts/checkManifest3D.mjs`.
+- [x] **10.1 (Phase 1)** Implement `GateSequence3D` (`src/three/scenes/GateSequence3D/`) in `HowItWorksSection.tsx` with single-draw vertex-shaded slabs, exported `CI_GATE_THRESHOLD = 70`, and DOM station fallback parity.
+- [x] **10.2 (Phase 2)** Implement `heroScanStore` + `HeroGateScene` synced to `HeroScanDemo` (`50ms` per-row `"Show fix"` stagger, real `crypto.subtle` digest Seal with zero `000000000000` placeholder).
+- [x] **10.3 (Phase 3)** Implement `ArchitectureFlow3D` (`graph.ts`, `ArchitectureSection.tsx`, `"Trace a finding"`, `"Isometric"` / `"Flat"` toggle, `sr-only` focusable stage list) + Vitest graph tests.
+- [x] **10.4 (Phase 4)** Implement `RuleCatalog3D` (`RulesCatalogSection.tsx`) and `AttackPath3D` (`incidentPaths.ts`, `IncidentTabsSection.tsx`, `"Without guard"` / `"With guard"` toggle).
+- [x] **10.5 (Phase 5)** Implement `DashboardPreview3D` (CSS `perspective: 1200px` + `view()` scroll-driven cards with 12 Playwright-captured light/dark 1x/2x `.webp` screenshots under `dashboard/public/images/preview/`).
+- [x] **10.6 (Phase 6)** Reuse `LedgerChain3D` as lazy route-scoped `LedgerArtifactScene3D` on `ArtifactsPage` driven by the user's real Web Crypto digest, keeping `/app`, `/app/findings`, `/app/pipelines`, and `/app/runs` free of Three.js chunks.
+- [x] **10.7 (Phase 7)** Pass full §9 Playwright verification (`verifyPhase7Full.mjs` `prod` + `e2e`: 5s idle GPU frame check = `0` frames, static pose determinism diff `0`, keyboard operability, fallbacks, zero console errors across `/` and `/app/*`) and update all project reports & `dashboard/docs/BUILD_TRACKER.md`.

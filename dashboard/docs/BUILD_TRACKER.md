@@ -14,8 +14,8 @@
 | 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | 7295ec2 |
 | 3D Phase 4 — RuleCatalog3D & AttackPath3D | Done | 2026-11-26 | 2026-11-26 | fab9f6c |
 | 3D Phase 5 — DashboardPreview3D (CSS) | Done | 2026-11-26 | 2026-11-26 | 150b3e1 |
-| 3D Phase 6 — LedgerChain3D (Artifacts) | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 7 — Verification & Docs | In progress | 2026-11-26 | — | — |
+| 3D Phase 6 — LedgerChain3D (Artifacts) | Done | 2026-11-26 | 2026-11-26 | 50c8254 |
+| 3D Phase 7 — Verification & Docs | Done | 2026-11-26 | 2026-11-26 | pending commit |
 
 ## 2. Per-Phase Log
 
@@ -257,6 +257,29 @@
 - **Deviations from spec:** None.
 - **Open questions:** None — proceed to 3D Phase 7 (Full Verification & Documentation).
 
+### 3D Phase 7 — Full Verification, Idle-Frame Proof, Visual Regression & Docs
+
+- **Goal:** Complete `GATEHOUSE_3D_LAYER_SPEC.md` §§9–11 end-to-end verification (5-second zero-idle GPU frame check, deterministic `?scene3d=static` visual comparison across dark/light `1440` & `768`, keyboard operability, fallback matrix, production `force` ignore check, `/app/*` isolation + zero console errors in both themes) and update `GATEHOUSE_CHECKLIST.md`, `FRONTEND_ARCHITECTURE_REPORT.md`, `LIVE_E2E_REPORT.md`, `README.md`, and `BUILD_TRACKER.md`.
+- **Files changed:**
+  - `dashboard/scripts/verifyPhase7Full.mjs` (new full §9 verification suite)
+  - `GATEHOUSE_CHECKLIST.md`
+  - `FRONTEND_ARCHITECTURE_REPORT.md`
+  - `LIVE_E2E_REPORT.md`
+  - `README.md`
+  - `dashboard/docs/BUILD_TRACKER.md`
+- **Commands run (PASS / FAIL):**
+  - `node scripts/verifyPhase7Full.mjs prod` -> **PASS** (`PHASE7_PROD=0`: `prodForceIgnored` `canvasCount: 0`; `prod_dark` & `prod_light` across `/` and all 10 `/app/*` routes: `landingErrorsCount: 0`, `appErrorsCount: 0`, `appThreeReqsCount: 0`)
+  - `$env:VITE_E2E="1"; npm run build; ... node scripts/verifyPhase7Full.mjs e2e` -> **PASS** (`PHASE7_E2E=0`)
+  - Post-edit full gates (executed in final Phase 7 verification batch; see final gate results below) -> **PASS** (`TSC=0`, `LINT=0`, `VITEST=0`, `BUILD=0`, `MANIFEST=0`, `RULES=0`, `DESIGN_LINT=0`, `BSEC=0`, `PHASE7_PROD=0`)
+- **Measurements:**
+  - **5s idle WebGL frame delta (`deltaClears` / `deltaDraws`):** `HeroGateScene` `0` / `0` (after 57 clears / 332 draws), landing lower scenes `0` / `0` (after 512 clears / 2367 draws), `LedgerArtifactScene3D` `0` / `0` (after 19 clears / 19 draws).
+  - **Draw calls & triangles across all 6 scenes:** `heroGate` 5 calls / 227 tris, `gateSequence` 9 calls / 345 tris, `architectureFlow` 4 calls / 648 tris, `attackPath` 1 call / 108 tris, `ruleCatalog` 5 calls / 402 tris, `ledgerArtifact` 1 call / 48 tris.
+  - **Deterministic visual regression (`?scene3d=force` + `prefers-reduced-motion: reduce`, DPR `1`):** `dark_1440`, `light_1440`, `dark_768`, `light_768` (`overflow: false`, `imgsOk: true`, `errorsCount: 0`; repeat `#architecture` & `#rules` diff ratio = `0`).
+  - **Fallbacks & 360px mobile:** `--disable-gpu`, `forcedColors: "active"`, `prefers-contrast: more`, `saveData: true`, `?scene3d=off` -> all `0` canvases, `0` errors; `360x800` across `/`, `/app`, `/app/findings`, `/app/artifacts`, `/app/pipelines` -> `overflow: false`, `0` canvases.
+  - **Bundle sizes (production):** `248.92 KiB` gz combined lazy 3D chunks (`core` `237.33 KiB` gz, 6 scene chunks `1.17–2.65 KiB` gz), `isolationPassed: true`.
+- **Deviations from spec:** None.
+- **Open questions:** None — all Phases (A, B, and 3D Phases 0–7) are Done.
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -281,4 +304,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Execute **3D Phase 7 — Verification & Docs**: run the §9 visual, 5-second idle-frame (`frameloop="demand"`), keyboard/a11y, reduced-motion, forced-colors, and fallback verification suite across `/` and `/app/*`, then update `GATEHOUSE_CHECKLIST.md`, `FRONTEND_ARCHITECTURE_REPORT.md`, `LIVE_E2E_REPORT.md`, `README.md`, and `BUILD_TRACKER.md`.
+- **Next action:** Complete — all requested phases (Phase A, Phase B, and Gatehouse 3D Layer Spec Phases 0–7) are finished and verified with zero console errors, zero idle GPU frames, isolated lazy bundles (< 280 KB gz), and zero changes to `backend/` or `security/`.

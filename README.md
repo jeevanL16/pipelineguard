@@ -57,11 +57,13 @@ Designed around [DESIGN.md](./DESIGN.md): dark petrol-slate (`#0E181D`) and cool
 
 | Surface | Route | Highlights |
 |---|---|---|
-| **Hero Scan Demo & Playground** | `/` | Always-dark YAML panel with WAAPI line-scan cursor, `"Show fix"` diff swap, real browser `crypto.subtle.digest` **`Verified`** SHA-256 Seal, and a Web Worker YAML Playground (`>200` lines) running the shared `PG-WF-*` engine locally. |
+| **Hero Scan Demo & Playground** | `/` | Always-dark YAML panel synced with an orthographic matte WebGL `HeroGateScene` via `heroScanStore`, `50ms` staggered `"Show fix"` reveal, real `crypto.subtle.digest` **`Verified`** Seal, and a Web Worker YAML Playground (`>200` lines). |
+| **3D Architecture, Incidents & Rules** | `/#architecture`, `/#incidents`, `/#rules` | Demand-rendered (`frameloop="demand"`) isometric views built from `graph.ts`, `incidentPaths.ts`, and `rules/*` (0 idle GPU frames over 5s), with accessible hidden stage lists, `"Isometric"` / `"Flat"` toggle, and identical 2D fallbacks. |
+| **Dashboard Preview (CSS 3D)** | `/#preview` | Three Playwright-captured light/dark `/app` screenshots arranged in `perspective: 1200px` CSS 3D depth layers (`animation-timeline: view()`) with keyboard-focusable hotspots. |
 | **Overview** | `/app` | Ranked **"Needs attention"** queue (severity first, then oldest open finding), stacked severity posture bar, plain-text stats, single-series Recharts risk chart with gate threshold, and first-run onboarding when 0 pipelines exist. |
 | **Findings & Evidence Drawer** | `/app/findings` | URL-synced severity/status filter chips, `@tanstack/react-table` sticky headers, `28/36/44px` density persistence, `j`/`k`/`Enter`/`Escape` keyboard nav, slide-out YAML evidence + diff drawer, `useOptimistic` updates inside `startTransition`, and 6-second **Undo** toasts. |
 | **Incidents, Workflows & Secrets** | `/app/incidents`, `/workflows`, `/secrets` | High/critical active triage workspace, full filterable 23-rule catalog, and masked secret findings + Gitleaks severity table. |
-| **Artifacts Verifier** | `/app/artifacts` | Browser-side `crypto.subtle.digest` SHA-256 verifier matching `artifact_verifier.py` (`MATCH · PASS` / `MISMATCH · BLOCK`) with `Verified` Seal and session log. |
+| **Artifacts Verifier** | `/app/artifacts` | Browser-side `crypto.subtle.digest` SHA-256 verifier matching `artifact_verifier.py` (`MATCH · PASS` / `MISMATCH · BLOCK`) with `Verified` Seal, session log, and route-scoped lazy `LedgerArtifactScene3D`. |
 | **Pipelines & Progressive Connect** | `/app/pipelines` | React 19 `useActionState` + Zod Connect Repository form: resolves `/api/repositories/resolve` or GitHub public `.github/workflows`, suggests `pipe-<repo>` + branches, validates blur-first with multi-error focus summaries. |
 | **Runs, Audit log & Settings** | `/app/runs`, `/audit`, `/settings` | Execution telemetry, append-only status transition trail, live `/api/health` + `/api/test` latency table, theme switcher (`System`/`Light`/`Dark`), and optional JWT sign-in. |
 | **Command Palette** | `Ctrl+K` / `⌘K` | `cmdk` dialog searching Recent items, Findings, Pipelines, Pages, and Quick Actions. |
@@ -106,17 +108,19 @@ pipelineguard/
 │   ├── seed.py                  # Realistic initial telemetry seeder
 │   └── requirements.txt
 │
-├── dashboard/                   # Gatehouse (v2) React 19 + TypeScript + Vite 8 + Tailwind v4
-│   ├── public/                  # favicon.svg (Gate mark) & favicon-critical.svg
-│   ├── scripts/verifyRules.ts   # Shared client rule engine fixture test suite
+├── dashboard/                   # Gatehouse (v2) React 19 + TypeScript 7 + Vite 8 + Tailwind v4
+│   ├── public/                  # favicon.svg, favicon-critical.svg, fonts/*.woff2, images/preview/*.webp
+│   ├── scripts/                 # verifyRules.ts, checkManifest3D.mjs, capturePreviewScreenshots.mjs,
+│   │                            # verifyPhaseScenes.mjs, verifyPhase7Full.mjs
 │   └── src/
 │       ├── app/                 # router.tsx (lazy routes), queryClient.ts, theme.tsx
-│       ├── features/            # landing, shell, overview, findings, incidents,
-│       │                        # workflows, secrets, artifacts, pipelines, runs, audit, settings
+│       ├── features/            # landing (incl. ArchitectureSection, HeroGateSlot), shell, overview, findings,
+│       │                        # incidents, workflows, secrets, artifacts, pipelines, runs, audit, settings
 │       ├── motion/              # DESIGN.md timing tokens + async LazyMotion domMax provider
 │       ├── rules/               # TypeScript rule engine mirroring security/workflow (24 rules + Worker)
 │       ├── services/api.ts      # Typed API client with latency metrics & repo metadata fallback
-│       ├── styles/tokens.css    # Semantic --pg-* dark & light variables, view() animations
+│       ├── styles/tokens.css    # Semantic --pg-* dark & light variables, CSS 3D preview & view() animations
+│       ├── three/               # Isolated R3F/Three core primitives, heroScanStore & 6 lazy scenes
 │       └── ui/                  # Button, Chip, Kbd, Badge, Seal, Field, Select, Panel, CodePanel,
 │                                # Dialog, Drawer, Tabs, Tooltip, ToastProvider, BrandMark
 │
@@ -224,9 +228,9 @@ Observed local verification results across backend security modules and frontend
 | **Secrets Security Policy** | `21 passed, 12 skipped` *(Gitleaks CLI integration skipped when binary absent)* | `python -m pytest -q security/secrets/tests --no-cov` |
 | **Artifact Integrity Verifier** | `69 passed, 1 skipped` | `python -m pytest -q security/artifacts/tests --no-cov` |
 | **FastAPI Backend Smoke** | `2 passed` | `cd backend && python -m pytest -q --no-cov` |
-| **Frontend Typecheck, Lint & Build** | `0 errors` (`vite build` + code-split bundles) | `cd dashboard && npx tsc --noEmit && npm run lint && npm run build` |
+| **Frontend Typecheck, Lint, Unit & Build** | `0 errors` (`15/15` Vitest passed; `248.92 KiB` lazy 3D gz, isolated from `/app`) | `cd dashboard && npx tsc --noEmit && npm run lint && npm test -- --run && npm run build && node scripts/checkManifest3D.mjs` |
 | **Browser Rule Engine Fixtures** | `ALL RULE ENGINE FIXTURE TESTS PASSED` | `npx esbuild scripts/verifyRules.ts --bundle --platform=node --format=esm \| node --input-type=module -` |
-| **Live Chrome E2E & API Walkthrough** | Verified across `/`, `/app/*`, `jeevanL16/eventgenie`, `360px` & Dark/Light | See [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md) |
+| **Gatehouse 3D & Live Chrome E2E** | Verified 0 idle GPU frames (5s), 0 console errors across `/` & `/app/*` (`dark`/`light`), fallbacks, keyboard parity, `jeevanL16/eventgenie`, `360px` | `node scripts/verifyPhase7Full.mjs prod` & [LIVE_E2E_REPORT.md](./LIVE_E2E_REPORT.md) |
 
 ---
 
