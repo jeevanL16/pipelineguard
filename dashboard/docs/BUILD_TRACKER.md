@@ -7,8 +7,8 @@
 | Phase | Status | Started | Finished | Commit |
 | --- | --- | --- | --- | --- |
 | Phase A — Audit vs DESIGN.md | Done | 2026-11-26 | 2026-11-26 | c594051 |
-| Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 0 — Toolchain, Bundle & Assets | Not started | — | — | — |
+| Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | 9173133 |
+| 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | pending commit |
 | 3D Phase 1 — Core Canvas & Theme | Not started | — | — | — |
 | 3D Phase 2 — HeroGateScene | Not started | — | — | — |
 | 3D Phase 3 — Architecture & Rules 3D | Not started | — | — | — |
@@ -81,6 +81,39 @@
 - **Deviations from spec:** Gap A14 (`eslint.config.js` TS/TSX coverage) deferred cleanly: `typescript-eslint@8.74.0` peer dependency is `typescript <6.1.0` whereas this repo uses `typescript@7.0.2`, so strict type/hygiene checking remains enforced by `tsc --noEmit` (`typescript@7.0.2`).
 - **Open questions:** None.
 
+### 3D Phase 0 — Toolchain, Bundle & Core Primitives
+
+- **Goal:** Install exact React 19.3-compatible 3D dependencies (`three@0.187.0`, `@types/three@0.187.0`, `@react-three/fiber@9.8.2`, `@react-three/drei@10.7.9`), configure Vite `build.manifest: true`, implement `src/three/core/*` and shared severity glyphs, verify lazy 3D chunk isolation and real gzipped size (<300 KB stop gate), verify live WebGL Canvas + all 2D fallbacks in Chromium with zero console errors, then remove the throwaway smoke route.
+- **Files changed:**
+  - `dashboard/package.json`, `dashboard/package-lock.json` (pinned `three@0.187.0`, `@types/three@0.187.0`, `@react-three/fiber@9.8.2`, `@react-three/drei@10.7.9`; added `vitest@5.1.2`, `playwright@1.65.1`, `"test": "vitest run"`).
+  - `dashboard/vite.config.js` (added `build: { manifest: true }`).
+  - `dashboard/src/three/core/{liveCanvasBudget.ts,motion3d.ts,useScene3DMode.ts,useSectionProgress.ts,useGatehouseTheme.ts,shading.ts,glyphs.tsx,useInvalidateWhile.ts,useProjectedAnchors.ts,Scene3D.tsx,index.ts}`.
+  - `dashboard/src/three/core/__tests__/core.test.ts` (5 unit tests covering `MAX_LIVE_CANVASES=3`, played registry, scroll math, `STAGE_AT`/`stageLit`, and 3-face shading).
+  - `dashboard/scripts/checkManifest3D.mjs` (bundle manifest isolation & 300 KB gzip gate assertion).
+- **Commands run (PASS / FAIL):**
+  - **Smoke build (with temporary lazy `/__smoke3d` route):**
+    - `cd d:\pipelineguard\dashboard; npx vitest run` -> **PASS** (`VITEST=0`, 5/5 tests)
+    - `cd d:\pipelineguard\dashboard; npm run build; node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true` across 7 checked entries/routes)
+    - `cd d:\pipelineguard\dashboard; $env:VITE_E2E="1"; npm run build; node scripts\verify3DSmoke.mjs` -> **PASS** (`SMOKE=0`):
+      - `/` and `/app`: `threeRequestsCount: 0`, `errors: []`
+      - `/__smoke3d?scene3d=force`: live `<canvas>` rendered (`672x280`, screenshot `2677 B`), `errors: []`
+      - Fallbacks: `narrow360` (`canvasCount: 0`, fallback active, `errors: []`), `scene3dOff` (`0`), `reducedMotion` (`1` static canvas), `forcedColors` (`0`), `highContrast` (`0`), `webglDisabled` (`--disable-gpu --disable-webgl --disable-webgl2`: `0`), `saveData` (`0`).
+  - **Post-cleanup final Phase 0 gates (throwaway `/__smoke3d` removed):**
+    - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+    - `npm run lint` -> **PASS** (`LINT=0`)
+    - `npm test` -> **PASS** (`VITEST=0`, 5/5 tests)
+    - `npm run build` -> **PASS** (`BUILD=0`, `LandingPage` `96.23 kB / 27.39 kB gz`, `0.00 kB` delta vs Phase B baseline)
+    - `node scripts\checkManifest3D.mjs` -> **PASS** (`MANIFEST=0`, `isolationPassed: true`)
+    - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`, `ALL RULE ENGINE FIXTURE TESTS PASSED`)
+    - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - Measured 3D lazy chunk (`SmokeProbe3D-*.js`, containing `three@0.187.0` + `@react-three/fiber@9.8.2` + `@react-three/drei@10.7.9` named exports + `core/*` + `glyphs` + smoke box): **251.88 kB** gzipped per Vite reporter (**243.98 KiB** gzipped / **925.64 KiB** raw via Node zlib) — well below the 280 KB target and 300 KB stop gate.
+  - Landing chunk delta: `27.39 kB` gz before -> `27.39 kB` gz after (**+0.00 kB**).
+- **Deviations from spec:**
+  - Tested manual `rolldownOptions.output.codeSplitting.groups` (`three-runtime`); Rolldown merged a React runtime binding into `_three-runtime` causing `index.html` to import `_three-runtime` statically (`isolationPassed: false`). Following §0.4 item 5 ("A dynamic `import()` already isolates the chunk; add `codeSplitting.groups` only if the manifest check in 9.4 fails"), keeping automatic Rolldown code splitting produced `isolationPassed: true` cleanly with 243.98 KiB gzip. Will re-evaluate `groups` only if multi-scene chunking splits unfavorably in Phases 1–4.
+  - Used `verify3DSmoke.mjs` API route stub (`http://127.0.0.1:8000/api/**`) during standalone frontend preview tests because FastAPI backend was not running during Phase 0 browser check; noted in log, backend untouched.
+- **Open questions:** None — proceed to 3D Phase 1 (`GateSequence3D`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -105,4 +138,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit Phase B and proceed to **3D Phase 0 — Toolchain, Bundle & Assets** (`three@0.187.0`, `@types/three@0.187.0`, `@react-three/fiber@9.8.2`, `@react-three/drei@10.7.9`, Vite `rolldownOptions.output.codeSplitting.groups`, build manifest isolation & lazy `<300 KB` gzip gate check).
+- **Next action:** Commit 3D Phase 0 (`phase 0: install 3D core, glyphs, bundle isolation and smoke check`) and proceed to **3D Phase 1 — `GateSequence3D`** in `HowItWorksSection.tsx`.
