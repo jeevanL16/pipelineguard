@@ -6,6 +6,7 @@ import { ConnectRepositoryForm } from "../pipelines/components/ConnectRepository
 import { ConnectRepositoryDialog } from "../pipelines/components/ConnectRepositoryDialog";
 import { LandingNav } from "./components/LandingNav";
 import { HeroScanDemo } from "./components/HeroScanDemo";
+import { HeroGateSlot } from "./components/HeroGateSlot";
 import { IncidentTabsSection } from "./components/IncidentTabsSection";
 import { PlaygroundSection } from "./components/PlaygroundSection";
 import { HowItWorksSection } from "./components/HowItWorksSection";
@@ -46,24 +47,28 @@ export function LandingPage() {
       <main className="space-y-16 sm:space-y-24 pb-20">
         {/* Hero */}
         <section className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-12 sm:pt-16 space-y-10">
-          <div className="max-w-[740px] space-y-5">
-            <h1 className="pg-display-xl text-[var(--pg-text)] m-0">
-              Catch risky workflow changes before they run.
-            </h1>
-            <p className="pg-body-lg text-[var(--pg-text-muted)] max-w-[40rem] m-0">
-              PipelineGuard reads your GitHub Actions workflows, flags unpinned actions, exposed secrets and unverified artifacts, and records every decision in an audit log.
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <Button
-                variant="primary"
-                onClick={(e) => openDialog(e.currentTarget)}
-              >
-                Connect repository
-              </Button>
-              <a href="#playground" className="no-underline">
-                <Button variant="secondary">Scan a workflow here</Button>
-              </a>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-8 max-w-[740px] space-y-5">
+              <h1 className="pg-display-xl text-[var(--pg-text)] m-0">
+                Catch risky workflow changes before they run.
+              </h1>
+              <p className="pg-body-lg text-[var(--pg-text-muted)] max-w-[40rem] m-0">
+                PipelineGuard reads your GitHub Actions workflows, flags unpinned actions, exposed secrets and unverified artifacts, and records every decision in an audit log.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Button
+                  variant="primary"
+                  onClick={(e) => openDialog(e.currentTarget)}
+                >
+                  Connect repository
+                </Button>
+                <a href="#playground" className="no-underline">
+                  <Button variant="secondary">Scan a workflow here</Button>
+                </a>
+              </div>
             </div>
+
+            <HeroGateSlot />
           </div>
 
           <HeroScanDemo />

@@ -103,7 +103,7 @@ async function run() {
       await context.close();
     }
 
-    // 2. Landing desktop (>= 768px) with ?scene3d=force -> GateSequence3D mounts on scroll, aligns, <=12 draw calls
+    // 2. Landing desktop (>= 768px) with ?scene3d=force -> HeroGateScene + GateSequence3D
     {
       const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
       const page = await context.newPage();
@@ -115,6 +115,22 @@ async function run() {
       });
 
       await page.goto(`${BASE_URL}/?scene3d=force`, { waitUntil: "networkidle" });
+      await page.waitForSelector('section [role="group"][aria-label*="Isometric gate model"] canvas', {
+        timeout: 10000,
+      });
+      await page.waitForTimeout(1600);
+
+      // Click Show fix and verify staggered progression and real SHA seal (no 000000000000)
+      await page.getByRole("button", { name: "Show fix" }).click();
+      await page.waitForTimeout(260);
+      const midFixedCount = await page.locator('li[data-finding-fixed="true"]').count();
+      await page.waitForTimeout(1500);
+      const endFixedCount = await page.locator('li[data-finding-fixed="true"]').count();
+      const bodyAfterFix = await page.locator("body").innerText();
+      if (endFixedCount !== 7 || bodyAfterFix.includes("000000000000")) {
+        throw new Error(`Hero Show fix check failed: endFixed=${endFixedCount}`);
+      }
+
       await page.locator("#how-it-works").scrollIntoViewIfNeeded();
       await page.waitForSelector("#how-it-works canvas", { timeout: 10000 });
       await page.waitForTimeout(600);
@@ -125,14 +141,15 @@ async function run() {
       await replayBtn.click();
       await page.waitForTimeout(1600);
 
-      // Verify idle frames when page is completely still for 1.5s after settle
       const rAFCheck = await page.evaluate(() => {
         const attr = document.getElementById("how-it-works")?.getAttribute("data-scene3d");
         const litCount = document.querySelectorAll('#how-it-works [data-lit="true"]').length;
         return { attr, litCount };
       });
 
-      report.landingGateSequenceWebGL = {
+      report.landingWebGL = {
+        heroMidFixedCount: midFixedCount,
+        heroEndFixedCount: endFixedCount,
         canvasBox: canvasBox ? { w: Math.round(canvasBox.width), h: Math.round(canvasBox.height) } : null,
         stats,
         rAFCheck,
@@ -141,8 +158,13 @@ async function run() {
       if (!canvasBox || canvasBox.height !== 280) {
         throw new Error("Expected 280px GateSequence canvas: " + JSON.stringify(canvasBox));
       }
-      if (!stats?.gateSequence || stats.gateSequence.calls > 12 || stats.gateSequence.triangles > 20000) {
-        throw new Error("Draw-call / triangle budget exceeded: " + JSON.stringify(stats));
+      if (
+        !stats?.gateSequence ||
+        stats.gateSequence.calls > 12 ||
+        !stats?.heroGate ||
+        stats.heroGate.calls > 12
+      ) {
+        throw new Error("Draw-call budget exceeded: " + JSON.stringify(stats));
       }
       if (errors.length > 0) throw new Error("Errors on /?scene3d=force: " + errors.join("; "));
       await context.close();

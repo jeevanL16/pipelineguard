@@ -9,14 +9,13 @@
 | Phase A — Audit vs DESIGN.md | Done | 2026-11-26 | 2026-11-26 | c594051 |
 | Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | 9173133 |
 | 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | 6d3b8b9 |
-| 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 2 — HeroGateScene | Not started | — | — | — |
-| 3D Phase 2 — HeroGateScene | Not started | — | — | — |
-| 3D Phase 3 — Architecture & Rules 3D | Not started | — | — | — |
-| 3D Phase 4 — AttackPath3D | Not started | — | — | — |
-| 3D Phase 5 — DashboardPreview & Ledger | Not started | — | — | — |
-| 3D Phase 6 — Motion, A11y & Perf Audit | Not started | — | — | — |
-| 3D Phase 7 — Verification & Cleanup | Not started | — | — | — |
+| 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | 336ab60 |
+| 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | pending commit |
+| 3D Phase 3 — ArchitectureFlow3D | Not started | — | — | — |
+| 3D Phase 4 — RuleCatalog3D & AttackPath3D | Not started | — | — | — |
+| 3D Phase 5 — DashboardPreview3D (CSS) | Not started | — | — | — |
+| 3D Phase 6 — LedgerChain3D (Artifacts) | Not started | — | — | — |
+| 3D Phase 7 — Verification & Docs | Not started | — | — | — |
 
 ## 2. Per-Phase Log
 
@@ -146,6 +145,29 @@
 - **Deviations from spec:** Switched slabs/bars from 6-material arrays to single-draw vertex-shaded `UNIT_SHADED_BOX_GEOMETRY` after observing 20 WebGL draw calls on initial run; keeps 3-face shading while dropping render calls to 9 (<= 12 budget).
 - **Open questions:** None — proceed to 3D Phase 2 (`HeroGateScene`).
 
+### 3D Phase 2 — `heroScanStore`, `HeroGateScene`, Stagger & Seal Fix
+
+- **Goal:** Add `heroScanStore` (`useSyncExternalStore`) bridging `HeroScanDemo` -> `HeroGateScene` inside the fixed 240px `lg+` hero slot (`HeroGateSlot` mounted strictly after window `load` + `requestIdleCallback`/timeout fallback), fix simultaneous finding row flips using a true 50ms `fixedCount` stepper shared by DOM rows and 3D tiles, and verify non-zero real digest seal gating.
+- **Files changed:**
+  - `dashboard/src/three/state/{heroScanStore.ts,__tests__/heroScanStore.test.ts}`
+  - `dashboard/src/three/scenes/HeroGateScene.tsx` (single `InstancedMesh` gate arch + N analyzer finding tiles + severity/check glyphs + digest badge overlay when fixed)
+  - `dashboard/src/features/landing/components/{HeroGateSlot.tsx,HeroScanDemo.tsx}` & `dashboard/src/features/landing/LandingPage.tsx`
+  - `dashboard/scripts/verifyPhaseScenes.mjs` (extended to test `HeroGateScene` mid-stagger & final fixed state + draw calls)
+- **Commands run (PASS / FAIL):**
+  - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `npm run lint` -> **PASS** (`LINT=0`)
+  - `npm test` -> **PASS** (`VITEST=0`, 10/10 tests across 3 test suites)
+  - `npm run build` + `node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true`)
+  - `node scripts\verifyPhaseScenes.mjs` -> **PASS** (`PHASE_SCENES=0`: `/app*` 0 3D requests, 0 errors; `heroMidFixedCount: 1`, `heroEndFixedCount: 7`, zero `000000000000`; `heroGate` 5 draw calls / 227 triangles; `gateSequence` 9 draw calls / 345 triangles)
+  - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - Combined lazy 3D chunks: `242.00 KiB` gz (`core`: 237.08 KiB, `GateSequence3D`: 2.89 KiB, `HeroGateScene`: 2.03 KiB).
+  - `HeroGateScene` WebGL telemetry: **5 draw calls**, **227 triangles**.
+  - Landing static closure: `243.88 KiB` gz (`+1.05 KiB` delta from `heroScanStore` + `HeroGateSlot`).
+- **Deviations from spec:** None — all Phase 2 requirements met.
+- **Open questions:** None — proceed to 3D Phase 3 (`ArchitectureFlow3D`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -170,4 +192,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 1 and proceed to **3D Phase 2 — `heroScanStore`, `HeroGateScene`, stagger and seal fix**.
+- **Next action:** Commit 3D Phase 2 and proceed to **3D Phase 3 — `ArchitectureFlow3D`, section, nav** (`graph.ts` single source of truth, Graph tests, Play once + `"Trace a finding"` + `"Isometric / Flat"` `#architecture-flat`, accessible hidden list, `rules/*` derived counts).

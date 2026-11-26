@@ -3,6 +3,7 @@ import { RotateCcw } from "lucide-react";
 import { analyzeWorkflowText } from "../../../rules/analyzer";
 import { HERO_BROKEN_WORKFLOW, HERO_FIXED_WORKFLOW } from "../../../rules/sampleWorkflows";
 import { prefersReducedMotion, MOTION } from "../../../motion/motion";
+import { setHeroScanState } from "../../../three/state/heroScanStore";
 import { Badge, Button, CodePanel, Panel, Seal } from "../../../ui";
 import type { CodeLineAnnotation } from "../../../ui/Panel";
 
@@ -103,6 +104,23 @@ export function HeroScanDemo() {
     };
   }, [phase, replayNonce, brokenFindings, totalLines]);
 
+  // Publish live scan state into heroScanStore so HeroGateScene stays slaved without independent animation
+  useEffect(() => {
+    const mappedPhase = phase === "found" || phase === "diffing" ? "done" : phase;
+    setHeroScanState({
+      phase: mappedPhase,
+      scanLine,
+      totalLines:
+        phase === "rescanning" || phase === "fixed"
+          ? HERO_FIXED_WORKFLOW.split(/\r?\n/).length
+          : totalLines,
+      findings: brokenFindings,
+      revealedCount,
+      fixedCount,
+      digest: verifiedSha,
+    });
+  }, [phase, scanLine, totalLines, brokenFindings, revealedCount, fixedCount, verifiedSha]);
+
   const handleShowFix = async () => {
     const digest = await sha256Hex(HERO_FIXED_WORKFLOW);
     const fixedCheck = analyzeWorkflowText(HERO_FIXED_WORKFLOW, "ci.yml");
@@ -117,26 +135,45 @@ export function HeroScanDemo() {
 
     setFixedCount(0);
     setPhase("diffing");
-    setTimeout(() => {
+    window.setTimeout(() => {
       setPhase("rescanning");
       let line = 1;
       const fixedLen = HERO_FIXED_WORKFLOW.split(/\r?\n/).length;
       setScanLine(1);
-      const timer = window.setInterval(() => {
+
+      let checked = 0;
+      let scanDone = false;
+      let staggerDone = brokenFindings.length === 0;
+
+      const maybeFinish = () => {
+        if (!scanDone || !staggerDone) return;
+        setScanLine(null);
+        setVerifiedSha(fixedCheck.findings.length === 0 ? digest : null);
+        setPhase("fixed");
+        setAnnouncement("Fix applied. Re-scan complete: 0 findings.");
+      };
+
+      const lineTimer = window.setInterval(() => {
         line += 2;
-        const stepRatio = Math.min(1, line / fixedLen);
-        setFixedCount(Math.ceil(stepRatio * brokenFindings.length));
         if (line > fixedLen) {
-          window.clearInterval(timer);
+          window.clearInterval(lineTimer);
           setScanLine(null);
-          setFixedCount(brokenFindings.length);
-          setVerifiedSha(fixedCheck.findings.length === 0 ? digest : null);
-          setPhase("fixed");
-          setAnnouncement("Fix applied. Re-scan complete: 0 findings.");
+          scanDone = true;
+          maybeFinish();
         } else {
           setScanLine(line);
         }
       }, MOTION.scanLineMs);
+
+      const stepTimer = window.setInterval(() => {
+        checked += 1;
+        setFixedCount(checked);
+        if (checked >= brokenFindings.length) {
+          window.clearInterval(stepTimer);
+          staggerDone = true;
+          maybeFinish();
+        }
+      }, 50);
     }, MOTION.diffSwapMs);
   };
 
@@ -243,10 +280,9 @@ export function HeroScanDemo() {
             const isRelatedToHoveredLine =
               !isFixed && hoveredLine !== null && f.relatedLines.includes(hoveredLine);
             const descId = `hero-line-ref-${f.id}`;
-            const staggerDelayMs = isFixed ? idx * 45 : 0;
 
             return (
-              <li key={f.id}>
+              <li key={f.id} data-finding-fixed={isFixed ? "true" : "false"}>
                 <button
                   type="button"
                   aria-describedby={descId}
@@ -263,11 +299,6 @@ export function HeroScanDemo() {
                       target?.focus();
                     }
                   }}
-                  style={
-                    staggerDelayMs > 0 && !prefersReducedMotion()
-                      ? { transitionDelay: `${staggerDelayMs}ms` }
-                      : undefined
-                  }
                   className={`w-full text-left p-2.5 rounded-[8px] border transition-colors duration-120 cursor-pointer ${
                     isRelatedToHoveredLine
                       ? "bg-[var(--pg-raised)] border-[var(--pg-primary)]"
