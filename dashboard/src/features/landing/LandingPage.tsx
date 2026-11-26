@@ -10,6 +10,7 @@ import { HeroGateSlot } from "./components/HeroGateSlot";
 import { IncidentTabsSection } from "./components/IncidentTabsSection";
 import { PlaygroundSection } from "./components/PlaygroundSection";
 import { HowItWorksSection } from "./components/HowItWorksSection";
+import { ArchitectureSection } from "./components/ArchitectureSection";
 import { RulesCatalogSection } from "./components/RulesCatalogSection";
 import { DashboardPreviewSection } from "./components/DashboardPreviewSection";
 import { FaqSection } from "./components/FaqSection";
@@ -88,6 +89,10 @@ export function LandingPage() {
 
         <div className="border-t border-[var(--pg-line)]/60 pt-16 sm:pt-20">
           <HowItWorksSection />
+        </div>
+
+        <div className="border-t border-[var(--pg-line)]/60 pt-16 sm:pt-20">
+          <ArchitectureSection />
         </div>
 
         <div className="border-t border-[var(--pg-line)]/60 pt-16 sm:pt-20">

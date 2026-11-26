@@ -24,6 +24,12 @@ export function LandingNav({
               Rules
             </a>
             <a
+              href="#architecture"
+              className="pg-label-md text-[var(--pg-text-muted)] hover:text-[var(--pg-text)] no-underline transition-colors"
+            >
+              Architecture
+            </a>
+            <a
               href="#playground"
               className="pg-label-md text-[var(--pg-text-muted)] hover:text-[var(--pg-text)] no-underline transition-colors"
             >

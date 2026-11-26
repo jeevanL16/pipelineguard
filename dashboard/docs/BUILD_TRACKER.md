@@ -10,8 +10,8 @@
 | Phase B — Fix DESIGN.md Gaps | Done | 2026-11-26 | 2026-11-26 | 9173133 |
 | 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | 6d3b8b9 |
 | 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | 336ab60 |
-| 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 3 — ArchitectureFlow3D | Not started | — | — | — |
+| 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | bb36b2e |
+| 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
 | 3D Phase 4 — RuleCatalog3D & AttackPath3D | Not started | — | — | — |
 | 3D Phase 5 — DashboardPreview3D (CSS) | Not started | — | — | — |
 | 3D Phase 6 — LedgerChain3D (Artifacts) | Not started | — | — | — |
@@ -168,6 +168,28 @@
 - **Deviations from spec:** None — all Phase 2 requirements met.
 - **Open questions:** None — proceed to 3D Phase 3 (`ArchitectureFlow3D`).
 
+### 3D Phase 3 — `ArchitectureFlow3D`, Section & Navigation
+
+- **Goal:** Add the interactive 7-layer isometric `ArchitectureFlow3D` (`Sources -> Ingest -> Detect -> Score -> Events -> Store -> Surfaces`) driven by a single-source-of-truth `graph.ts`, add `ArchitectureSection` between How it works and Rules catalog plus an `"Architecture"` link in `LandingNav`, support viewport play-once + `"Show flow again"`, `"Trace a finding"`, `"Isometric / Flat"` hash toggle (`#architecture-flat`), hover/focus highlight via projected anchors + hidden accessible list, and enforce `graph.test.ts` invariants.
+- **Files changed:**
+  - `dashboard/src/three/scenes/ArchitectureFlow3D/{graph.ts,index.tsx,__tests__/graph.test.ts}`
+  - `dashboard/src/features/landing/components/{ArchitectureSection.tsx,LandingNav.tsx}` & `dashboard/src/features/landing/LandingPage.tsx`
+  - `dashboard/scripts/verifyPhaseScenes.mjs` (extended to verify ArchitectureFlow3D draw calls, Trace toggle, `#architecture-flat` hash toggle, hidden list focus, and dynamic manifest chunk isolation on `/app/*`).
+- **Commands run (PASS / FAIL):**
+  - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `npm run lint` -> **PASS** (`LINT=0`)
+  - `npm test` -> **PASS** (`VITEST=0`, 13/13 tests across 4 test suites including `graph.test.ts` DAG & continuous trace validation)
+  - `npm run build` + `node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true`)
+  - `node scripts\verifyPhaseScenes.mjs` -> **PASS** (`PHASE_SCENES=0`: `/app*` 0 3D requests, 0 console errors; `architectureFlow` 4 draw calls / 648 triangles; `archHiddenListWorks: true`; `archFlatHash: "#architecture-flat"`; `archFlatCanvasCount: 0`)
+  - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - Combined lazy 3D chunks: `244.52 KiB` gz (`core`: 237.31 KiB, `GateSequence3D`: 2.88 KiB, `HeroGateScene`: 2.03 KiB, `ArchitectureFlow3D`: 2.30 KiB).
+  - `ArchitectureFlow3D` WebGL telemetry: **4 draw calls**, **648 triangles**.
+  - Landing static closure: `246.82 KiB` gz.
+- **Deviations from spec:** None — all Tier A bundle, draw-call, and accessibility gates passed, unlocking Tier B (Phase 4).
+- **Open questions:** None — proceed to 3D Phase 4 (`RuleCatalog3D` and `AttackPath3D`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -192,4 +214,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 2 and proceed to **3D Phase 3 — `ArchitectureFlow3D`, section, nav** (`graph.ts` single source of truth, Graph tests, Play once + `"Trace a finding"` + `"Isometric / Flat"` `#architecture-flat`, accessible hidden list, `rules/*` derived counts).
+- **Next action:** Commit 3D Phase 3 and proceed to **3D Phase 4 — `RuleCatalog3D` & `AttackPath3D` (Tier B)**.

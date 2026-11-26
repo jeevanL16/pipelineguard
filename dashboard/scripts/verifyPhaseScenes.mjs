@@ -75,8 +75,15 @@ async function run() {
   const report = {};
 
   try {
-    // 1. /app routes must NEVER load three-runtime or scene chunks
+    // 1. /app routes must NEVER load three-runtime or any 3D scene chunks from manifest
     {
+      const manifestPath = new URL("../dist/.vite/manifest.json", import.meta.url);
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const lazy3dFiles = Object.entries(manifest)
+        .filter(([k, v]) => /core-|GateSequence3D|HeroGateScene|ArchitectureFlow3D|RuleCatalog3D|AttackPath3D/i.test(k + " " + (v.file || "")))
+        .map(([, v]) => v.file)
+        .filter(Boolean);
+
       const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
       const page = await context.newPage();
       await mockBackendApi(page);
@@ -87,8 +94,9 @@ async function run() {
         if (msg.type() === "error") errors.push(msg.text());
       });
       page.on("request", (req) => {
-        if (/GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|three/i.test(req.url())) {
-          threeReqs.push(req.url());
+        const url = req.url();
+        if (lazy3dFiles.some((f) => url.includes(f)) || /GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|three/i.test(url)) {
+          threeReqs.push(url);
         }
       });
 
@@ -136,10 +144,28 @@ async function run() {
       await page.waitForTimeout(600);
 
       const canvasBox = await page.locator("#how-it-works canvas").boundingBox();
-      const stats = await page.evaluate(() => (window).__PG_3D_STATS || null);
       const replayBtn = page.getByRole("button", { name: "Show sequence again" });
       await replayBtn.click();
       await page.waitForTimeout(1600);
+
+      // Phase 3: ArchitectureFlow3D scroll, Trace, Isometric/Flat + hash, hidden accessible list
+      await page.locator("#architecture").scrollIntoViewIfNeeded();
+      await page.waitForSelector("#architecture canvas", { timeout: 10000 });
+      await page.waitForTimeout(700);
+      await page.getByRole("button", { name: "Trace a finding" }).click();
+      await page.waitForTimeout(400);
+      await page.locator('#architecture ul[aria-label="Architecture pipeline stages"] button').first().focus();
+      await page.waitForTimeout(150);
+      const archTextOnFocus = await page.locator("#architecture").innerText();
+      await page.getByRole("button", { name: /^flat$/i }).click();
+      await page.waitForTimeout(150);
+      const flatHash = await page.evaluate(() => window.location.hash);
+      const flatCanvasCount = await page.locator("#architecture canvas").count();
+      await page.getByRole("button", { name: /^isometric$/i }).click();
+      await page.waitForSelector("#architecture canvas", { timeout: 10000 });
+      await page.waitForTimeout(250);
+
+      const stats = await page.evaluate(() => (window).__PG_3D_STATS || null);
 
       const rAFCheck = await page.evaluate(() => {
         const attr = document.getElementById("how-it-works")?.getAttribute("data-scene3d");
@@ -151,6 +177,9 @@ async function run() {
         heroMidFixedCount: midFixedCount,
         heroEndFixedCount: endFixedCount,
         canvasBox: canvasBox ? { w: Math.round(canvasBox.width), h: Math.round(canvasBox.height) } : null,
+        archHiddenListWorks: archTextOnFocus.includes("GitHub repository:"),
+        archFlatHash: flatHash,
+        archFlatCanvasCount: flatCanvasCount,
         stats,
         rAFCheck,
         errors,
@@ -158,11 +187,19 @@ async function run() {
       if (!canvasBox || canvasBox.height !== 280) {
         throw new Error("Expected 280px GateSequence canvas: " + JSON.stringify(canvasBox));
       }
+      if (flatHash !== "#architecture-flat" || flatCanvasCount !== 0) {
+        throw new Error(`Flat toggle failed: hash=${flatHash}, canvasCount=${flatCanvasCount}`);
+      }
+      if (!report.landingWebGL.archHiddenListWorks) {
+        throw new Error("Hidden architecture list focus did not drive inspector");
+      }
       if (
         !stats?.gateSequence ||
         stats.gateSequence.calls > 12 ||
         !stats?.heroGate ||
-        stats.heroGate.calls > 12
+        stats.heroGate.calls > 12 ||
+        !stats?.architectureFlow ||
+        stats.architectureFlow.calls > 12
       ) {
         throw new Error("Draw-call budget exceeded: " + JSON.stringify(stats));
       }
