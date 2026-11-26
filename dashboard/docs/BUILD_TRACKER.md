@@ -12,8 +12,8 @@
 | 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | 336ab60 |
 | 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | bb36b2e |
 | 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | 7295ec2 |
-| 3D Phase 4 — RuleCatalog3D & AttackPath3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 5 — DashboardPreview3D (CSS) | Not started | — | — | — |
+| 3D Phase 4 — RuleCatalog3D & AttackPath3D | Done | 2026-11-26 | 2026-11-26 | fab9f6c |
+| 3D Phase 5 — DashboardPreview3D (CSS) | Done | 2026-11-26 | 2026-11-26 | pending commit |
 | 3D Phase 6 — LedgerChain3D (Artifacts) | Not started | — | — | — |
 | 3D Phase 7 — Verification & Docs | Not started | — | — | — |
 
@@ -212,6 +212,29 @@
 - **Deviations from spec:** None — Tier B budget and interactive synchronization verified.
 - **Open questions:** None — proceed to 3D Phase 5 (`DashboardPreview3D`).
 
+### 3D Phase 5 — `DashboardPreview3D` (CSS 3D, Zero WebGL)
+
+- **Goal:** Upgrade `DashboardPreviewSection.tsx` with three real Playwright-captured light and dark WebP overview layers (`Needs attention`, `Open now`, `Mean finding risk by date`) with `1x`/`2x` `srcset`, scroll-linked CSS 3D `perspective` + `translateZ` inside `@supports (animation-timeline: view())`, flat reduced-motion/narrow/unsupported fallback, zero WebGL, zero `backdrop-filter`, and zero permanent `will-change`.
+- **Files changed:**
+  - `dashboard/scripts/capturePreviewScreenshots.mjs` (Playwright capture script generating 12 crisp WebP assets from real `/app` Overview views under dark and light themes).
+  - `dashboard/public/images/preview/{needs-attention,open-now,run-risk}-{dark,light}-{1x,2x}.webp`.
+  - `dashboard/src/styles/tokens.css` (CSS `@supports (animation-timeline: view())` rules for `.pg-preview-3d-stage`, `.pg-preview-3d-grid`, `.pg-preview-layer-1`, `.pg-preview-layer-2`).
+  - `dashboard/src/features/landing/components/DashboardPreviewSection.tsx` & `dashboard/scripts/verifyPhaseScenes.mjs`.
+- **Commands run (PASS / FAIL):**
+  - `node scripts\capturePreviewScreenshots.mjs` -> **PASS** (`CAPTURE=0`, 12 WebP files written)
+  - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `npm run lint` -> **PASS** (`LINT=0`)
+  - `npm test` -> **PASS** (`VITEST=0`, 15/15 tests)
+  - `npm run build` + `node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true`)
+  - `node scripts\verifyPhaseScenes.mjs` -> **PASS** (`PHASE_SCENES=0`, `previewImgsLoaded: true`, 0 console errors)
+  - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - 12 captured WebP images (1x: 12.2–24.5 kB each; 2x: 29.7–61.2 kB each).
+  - Combined lazy 3D chunks unchanged at **247.97 KiB** gz (zero WebGL added by Phase 5).
+- **Deviations from spec:** None.
+- **Open questions:** None — proceed to 3D Phase 6 (`LedgerChain3D` on `ArtifactsPage`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -236,4 +259,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 4 and proceed to **3D Phase 5 — `DashboardPreview3D` (CSS 3D)** (`public/images/preview/*` Playwright light/dark screenshots + `@supports (animation-timeline: view())` perspective layers + flat fallback).
+- **Next action:** Commit 3D Phase 5 and proceed to **3D Phase 6 — `LedgerChain3D` reuse on `ArtifactsPage`** (route-scoped lazy chunk using user's real Web Crypto digest).

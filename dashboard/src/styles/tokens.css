@@ -473,6 +473,62 @@ kbd,
   transform: scaleX(var(--gate-progress, 0));
 }
 
+/* DashboardPreview3D CSS-only scroll-driven layers (zero WebGL, zero backdrop-filter, no permanent will-change) */
+.pg-preview-3d-stage {
+  perspective: 1200px;
+}
+
+.pg-preview-3d-grid {
+  transform-style: preserve-3d;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+    .pg-preview-3d-grid {
+      animation: pg-preview-tilt linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 55%;
+    }
+    .pg-preview-layer-1 {
+      animation: pg-preview-z1 linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 55%;
+    }
+    .pg-preview-layer-2 {
+      animation: pg-preview-z2 linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 55%;
+    }
+  }
+}
+
+@keyframes pg-preview-tilt {
+  from {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(7deg) rotateY(-8deg);
+  }
+}
+
+@keyframes pg-preview-z1 {
+  from {
+    transform: translateZ(0px);
+  }
+  to {
+    transform: translateZ(20px);
+  }
+}
+
+@keyframes pg-preview-z2 {
+  from {
+    transform: translateZ(0px);
+  }
+  to {
+    transform: translateZ(38px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pg-seal-stamp,
   .pg-surface-enter {

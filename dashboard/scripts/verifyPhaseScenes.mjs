@@ -186,6 +186,15 @@ async function run() {
         .locator('#rules tbody tr[data-rule-id="PG-WF-001"]')
         .getAttribute("data-highlighted");
 
+      // Phase 5: DashboardPreview3D CSS-3D images loaded cleanly with zero extra WebGL canvas
+      const previewHeading = page.getByRole("heading", { name: "Built for daily triage" });
+      await previewHeading.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+      const previewImgsLoaded = await page.evaluate(() => {
+        const imgs = Array.from(document.querySelectorAll('img[src*="/images/preview/"]'));
+        return imgs.length === 3 && imgs.every((img) => img.complete && img.naturalWidth > 0);
+      });
+
       const stats = await page.evaluate(() => (window).__PG_3D_STATS || null);
 
       const rAFCheck = await page.evaluate(() => {
@@ -204,6 +213,7 @@ async function run() {
         incidentWithGuardLabel: incidentGuardedText.includes("PG-WF-019 blocked"),
         ruleCatalogCritRows: critRowsCount,
         ruleCatalogHighlightSync: rowHighlighted,
+        previewImgsLoaded,
         stats,
         rAFCheck,
         errors,
@@ -217,8 +227,8 @@ async function run() {
       if (!report.landingWebGL.archHiddenListWorks) {
         throw new Error("Hidden architecture list focus did not drive inspector");
       }
-      if (!report.landingWebGL.incidentWithGuardLabel || rowHighlighted !== "true") {
-        throw new Error("Phase 4 interactive assertions failed: " + JSON.stringify(report.landingWebGL));
+      if (!report.landingWebGL.incidentWithGuardLabel || rowHighlighted !== "true" || !previewImgsLoaded) {
+        throw new Error("Phase 4/5 assertions failed: " + JSON.stringify(report.landingWebGL));
       }
       if (
         !stats?.gateSequence ||

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useTheme } from "../../../app/theme";
 import { analyzeWorkflowText } from "../../../rules/analyzer";
 import { HERO_BROKEN_WORKFLOW } from "../../../rules/sampleWorkflows";
 import { Badge, Button, Panel } from "../../../ui";
@@ -40,16 +41,17 @@ const HOTSPOTS: readonly HotspotSpec[] = [
 ];
 
 export function DashboardPreviewSection() {
+  const { resolvedTheme } = useTheme();
   const [activeHotspot, setActiveHotspot] = useState<HotspotSpec["id"]>("queue");
   const current = HOTSPOTS.find((h) => h.id === activeHotspot) ?? HOTSPOTS[0];
   const sampleAnalysis = useMemo(
     () => analyzeWorkflowText(HERO_BROKEN_WORKFLOW, ".github/workflows/ci.yml"),
     []
   );
-  const topFindings = sampleAnalysis.findings.slice(0, 2);
   const featuredFinding =
     sampleAnalysis.findings.find((f) => f.ruleId === "PG-WF-001") ??
     sampleAnalysis.findings[0];
+  const themeSuffix = resolvedTheme === "light" ? "light" : "dark";
 
   return (
     <section className="max-w-[1200px] mx-auto px-4 sm:px-6 space-y-6">
@@ -59,7 +61,7 @@ export function DashboardPreviewSection() {
             Built for daily triage
           </h2>
           <p className="pg-body-md text-[var(--pg-text-muted)] m-0">
-            Inspect the queue, evidence drawer, and audit trail in the active theme. Focus any marker to read how it works.
+            Inspect the queue, open posture, and risk trend in the active theme. Focus any marker to read how it works.
           </p>
         </div>
 
@@ -70,67 +72,56 @@ export function DashboardPreviewSection() {
         </NavLink>
       </div>
 
-      {/* Real-layout themed dashboard preview with 3 focusable hotspots derived from client rule output */}
+      {/* Real-layout CSS 3D layered dashboard preview with light/dark Playwright captures & flat fallback */}
       <Panel padding="none" className="overflow-hidden">
-        <div className="relative bg-[var(--pg-canvas)] p-4 sm:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            {/* Queue surface */}
-            <div className="lg:col-span-7 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] p-4 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="pg-label-md text-[var(--pg-text)]">Needs attention</span>
-                <span className="pg-data-md text-[var(--pg-text-muted)]">
-                  {sampleAnalysis.findings.length} open
-                </span>
-              </div>
-              <div className="space-y-2">
-                {topFindings.map((finding, idx) => (
-                  <div
-                    key={finding.id}
-                    className={`flex items-center justify-between gap-2 p-2 rounded-[4px] border border-[var(--pg-line)] ${
-                      idx === 0 ? "bg-[var(--pg-raised)]" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Badge severity={finding.severity} />
-                      <span className="pg-code-sm text-[var(--pg-text)]">{finding.ruleId}</span>
-                      <span className="pg-body-sm text-[var(--pg-text-muted)] truncate">
-                        {finding.title}
-                      </span>
-                    </div>
-                    <span className="pg-data-md text-[var(--pg-text)]">L{finding.line ?? 1}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="pg-preview-3d-stage bg-[var(--pg-canvas)] p-4 sm:p-6">
+          <div className="pg-preview-3d-grid grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Layer 0: Needs attention screenshot */}
+            <figure className="m-0 lg:col-span-7 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] overflow-hidden">
+              <figcaption className="px-3 py-2 border-b border-[var(--pg-line)] pg-label-sm text-[var(--pg-text-muted)] flex items-center justify-between">
+                <span>Layer 1 · Needs attention queue</span>
+                <span className="pg-code-sm">{sampleAnalysis.findings.length} open in sample</span>
+              </figcaption>
+              <img
+                src={`/images/preview/needs-attention-${themeSuffix}-1x.webp`}
+                srcSet={`/images/preview/needs-attention-${themeSuffix}-1x.webp 1x, /images/preview/needs-attention-${themeSuffix}-2x.webp 2x`}
+                alt="PipelineGuard Needs attention triage queue sorted by severity and age"
+                loading="lazy"
+                className="block w-full h-auto"
+              />
+            </figure>
 
-            {/* Evidence drawer preview surface */}
-            <div className="lg:col-span-5 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] p-4 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="pg-label-md text-[var(--pg-text)]">
-                  Evidence · {featuredFinding?.ruleId ?? "PG-WF-001"}
-                </span>
+            {/* Layer 1: Open now posture screenshot */}
+            <figure className="pg-preview-layer-1 m-0 lg:col-span-5 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] overflow-hidden">
+              <figcaption className="px-3 py-2 border-b border-[var(--pg-line)] pg-label-sm text-[var(--pg-text-muted)] flex items-center justify-between">
+                <span>Layer 2 · Open now posture</span>
                 <Badge severity={featuredFinding?.severity ?? "CRITICAL"} />
-              </div>
-              <div className="p-2.5 rounded-[4px] bg-[var(--pg-critical-tint)] border-l-[3px] border-[var(--pg-critical)] pg-code-sm text-[var(--pg-text)] overflow-x-auto">
-                run: ./build.sh "${`{{ github.event.pull_request.title }}`}"
-              </div>
-              <div className="p-2.5 rounded-[4px] bg-[var(--pg-pass-tint)] border-l-[3px] border-[var(--pg-pass)] pg-code-sm text-[var(--pg-text)] overflow-x-auto">
-                + env: PR_TITLE: ${`{{ github.event.pull_request.title }}`}
-              </div>
-            </div>
+              </figcaption>
+              <img
+                src={`/images/preview/open-now-${themeSuffix}-1x.webp`}
+                srcSet={`/images/preview/open-now-${themeSuffix}-1x.webp 1x, /images/preview/open-now-${themeSuffix}-2x.webp 2x`}
+                alt="PipelineGuard Open now severity breakdown and pipeline summary"
+                loading="lazy"
+                className="block w-full h-auto"
+              />
+            </figure>
 
-            {/* Audit log strip */}
-            <div className="lg:col-span-12 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] p-3.5 flex flex-wrap items-center justify-between gap-3 pg-body-sm">
-              <div className="flex items-center gap-3">
-                <span className="pg-label-md text-[var(--pg-text)]">Audit log</span>
-                <span className="pg-code-sm text-[var(--pg-text-muted)]">
-                  {featuredFinding?.ruleId ?? "PG-WF-001"} · OPEN → RESOLVED
+            {/* Layer 2: Run risk trend screenshot */}
+            <figure className="pg-preview-layer-2 m-0 lg:col-span-12 border border-[var(--pg-line)] rounded-[8px] bg-[var(--pg-panel)] overflow-hidden">
+              <figcaption className="px-3 py-2 border-b border-[var(--pg-line)] pg-label-sm text-[var(--pg-text-muted)] flex items-center justify-between">
+                <span>Layer 3 · Mean finding risk vs CI gate threshold</span>
+                <span className="pg-code-sm">
+                  {featuredFinding?.ruleId ?? "PG-WF-001"} · Risk {sampleAnalysis.risk.score}/100 ({sampleAnalysis.risk.grade})
                 </span>
-              </div>
-              <span className="pg-data-md text-[var(--pg-text-muted)]">
-                Risk {sampleAnalysis.risk.score}/100 · Grade {sampleAnalysis.risk.grade}
-              </span>
-            </div>
+              </figcaption>
+              <img
+                src={`/images/preview/run-risk-${themeSuffix}-1x.webp`}
+                srcSet={`/images/preview/run-risk-${themeSuffix}-1x.webp 1x, /images/preview/run-risk-${themeSuffix}-2x.webp 2x`}
+                alt="PipelineGuard mean finding risk trend chart plotted against the 70-point CI gate threshold"
+                loading="lazy"
+                className="block w-full h-auto"
+              />
+            </figure>
           </div>
 
           {/* 3 Focusable Hotspot Controls + Accessible Callout */}
