@@ -13,9 +13,9 @@
 | 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | bb36b2e |
 | 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | 7295ec2 |
 | 3D Phase 4 — RuleCatalog3D & AttackPath3D | Done | 2026-11-26 | 2026-11-26 | fab9f6c |
-| 3D Phase 5 — DashboardPreview3D (CSS) | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 6 — LedgerChain3D (Artifacts) | Not started | — | — | — |
-| 3D Phase 7 — Verification & Docs | Not started | — | — | — |
+| 3D Phase 5 — DashboardPreview3D (CSS) | Done | 2026-11-26 | 2026-11-26 | 150b3e1 |
+| 3D Phase 6 — LedgerChain3D (Artifacts) | Done | 2026-11-26 | 2026-11-26 | pending commit |
+| 3D Phase 7 — Verification & Docs | In progress | 2026-11-26 | — | — |
 
 ## 2. Per-Phase Log
 
@@ -235,6 +235,28 @@
 - **Deviations from spec:** None.
 - **Open questions:** None — proceed to 3D Phase 6 (`LedgerChain3D` on `ArtifactsPage`).
 
+### 3D Phase 6 — `LedgerChain3D` (`ArtifactsPage`)
+
+- **Goal:** Reuse `LedgerChain3D` as a lazy route-scoped chunk (`LedgerArtifactScene3D`) inside `ArtifactsPage`, mounted only after the user computes or pastes a real SHA digest via Web Crypto (`crypto.subtle`), with an accessible 2D 4-block digest ledger strip when in `"fallback"` mode, while keeping `/app`, `/app/findings`, `/app/pipelines`, and `/app/runs` isolated from loading any Three/R3F chunk.
+- **Files changed:**
+  - `dashboard/src/three/scenes/LedgerChain3D.tsx`
+  - `dashboard/src/features/artifacts/ArtifactsPage.tsx`
+  - `dashboard/scripts/checkManifest3D.mjs`
+  - `dashboard/scripts/verifyPhaseScenes.mjs`
+- **Commands run (PASS / FAIL):**
+  - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `npm run lint` -> **PASS** (`LINT=0`)
+  - `npm test -- --run` -> **PASS** (`VITEST=0`, 5 test files, 15/15 tests passed)
+  - `npm run build` (production, non-E2E) + `node scripts/checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true` across 7 checked entries)
+  - `node scripts/verifyPhaseScenes.mjs` (Playwright over `VITE_E2E=1` build) -> **PASS** (`PHASE_SCENES=0`, `appIsolation.threeReqsCount=0`, `/app/artifacts?scene3d=force` rendered `artifactsLedger` with 0 console errors)
+  - `verifyRules.ts` -> **PASS** (`RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BSEC=0`)
+- **Measurements:**
+  - `artifactsLedger` (`LedgerArtifactScene3D`): **1 draw call**, **48 tris** (`<= 12` draw call budget).
+  - Production gzip chunk totals (`checkManifest3D.mjs`): `core` `237.33 KiB`, `GateSequence3D` `2.65 KiB`, `ArchitectureFlow3D` `2.29 KiB`, `HeroGateScene` `2.03 KiB`, `RuleCatalog3D` `1.91 KiB`, `AttackPath3D` `1.54 KiB`, `LedgerChain3D` `1.17 KiB` -> **248.92 KiB** combined lazy 3D total (< 280 KB target).
+- **Deviations from spec:** None.
+- **Open questions:** None — proceed to 3D Phase 7 (Full Verification & Documentation).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -259,4 +281,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 5 and proceed to **3D Phase 6 — `LedgerChain3D` reuse on `ArtifactsPage`** (route-scoped lazy chunk using user's real Web Crypto digest).
+- **Next action:** Execute **3D Phase 7 — Verification & Docs**: run the §9 visual, 5-second idle-frame (`frameloop="demand"`), keyboard/a11y, reduced-motion, forced-colors, and fallback verification suite across `/` and `/app/*`, then update `GATEHOUSE_CHECKLIST.md`, `FRONTEND_ARCHITECTURE_REPORT.md`, `LIVE_E2E_REPORT.md`, `README.md`, and `BUILD_TRACKER.md`.

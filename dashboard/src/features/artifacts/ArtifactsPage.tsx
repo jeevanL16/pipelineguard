@@ -1,7 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { Suspense, lazy, useMemo, useState } from "react";
 import { z } from "zod";
 import { Badge, Button, Field, Panel, Seal } from "../../ui";
+import { useScene3DMode } from "../../three/core/useScene3DMode";
 import { useFindingsQuery } from "../findings/queries";
+
+const LedgerArtifactScene3D = lazy(() =>
+  import("../../three/scenes/LedgerChain3D").then((m) => ({
+    default: m.LedgerArtifactScene3D,
+  }))
+);
 
 const Sha256Schema = z
   .string()
@@ -44,6 +51,7 @@ export function ArtifactsPage() {
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState<VerificationRecord | null>(null);
   const [history, setHistory] = useState<Array<VerificationRecord & { checkedAt: string }>>([]);
+  const sceneMode = useScene3DMode();
 
   const fillActualHashForDemo = async () => {
     const buf = selectedFile
@@ -212,6 +220,54 @@ export function ArtifactsPage() {
                   <Seal digest={result.actualHash} label="Verified" animate />
                 </div>
               )}
+
+              {result.actualHash && (() => {
+                const matched = result.outcome === "MATCH";
+                const digest = result.actualHash;
+                const ledgerFallback = (
+                  <div className="h-[140px] rounded-[8px] border border-[var(--pg-line)] bg-[var(--pg-canvas)] p-3 flex flex-col justify-between">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="pg-label-sm text-[var(--pg-text-muted)]">Ledger block</span>
+                      <Badge
+                        severity={matched ? "PASS" : "CRITICAL"}
+                        label={matched ? "Chain locked · Pass" : "Mismatch · Blocked"}
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 items-center">
+                      {[0, 1, 2, 3].map((idx) => (
+                        <div
+                          key={idx}
+                          className={`h-8 rounded-[4px] border flex items-center justify-center pg-code-sm text-[11px] ${
+                            idx === 3
+                              ? matched
+                                ? "border-[var(--pg-pass)] bg-[var(--pg-pass-tint)] text-[var(--pg-pass)]"
+                                : "border-[var(--pg-critical)] bg-[var(--pg-critical-tint)] text-[var(--pg-critical)]"
+                              : "border-[var(--pg-line)] bg-[var(--pg-panel)] text-[var(--pg-text-muted)]"
+                          }`}
+                        >
+                          {idx === 3 ? digest.slice(0, 6) : `blk-${idx + 1}`}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pg-code-sm text-[var(--pg-text-muted)]">
+                      sha256:{digest.slice(0, 12)}
+                    </div>
+                  </div>
+                );
+
+                return sceneMode === "fallback" ? (
+                  ledgerFallback
+                ) : (
+                  <Suspense fallback={ledgerFallback}>
+                    <LedgerArtifactScene3D
+                      digest={digest}
+                      matched={matched}
+                      mode={sceneMode}
+                      fallback={ledgerFallback}
+                    />
+                  </Suspense>
+                );
+              })()}
 
               <div className="space-y-1.5 pt-2 border-t border-[var(--pg-line)] pg-body-sm">
                 <div>

@@ -284,6 +284,31 @@ async function run() {
       await ctx.close();
     }
 
+    // Phase 6: /app/artifacts lazy LedgerChain3D with real Web Crypto digest
+    {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+      const page = await ctx.newPage();
+      await mockBackendApi(page);
+      const errors = [];
+      page.on("pageerror", (e) => errors.push(String(e)));
+      page.on("console", (msg) => {
+        if (msg.type() === "error") errors.push(msg.text());
+      });
+      await page.goto(`${BASE_URL}/app/artifacts?scene3d=force`, { waitUntil: "networkidle" });
+      await page.getByRole("button", { name: "Compute hash from input" }).click();
+      await page.getByRole("button", { name: "Verify digest" }).click();
+      await page.waitForSelector('main [role="group"][aria-label*="Artifact digest chain"] canvas', {
+        timeout: 10000,
+      });
+      await page.waitForTimeout(450);
+      const artStats = await page.evaluate(() => (window).__PG_3D_STATS?.ledgerArtifact || null);
+      report.artifactsLedger = { artStats, errors };
+      if (!artStats || artStats.calls > 12 || errors.length > 0) {
+        throw new Error("Artifacts LedgerChain3D failed: " + JSON.stringify(report.artifactsLedger));
+      }
+      await ctx.close();
+    }
+
     console.log("PHASE_SCENES_OK:", JSON.stringify(report, null, 2));
   } finally {
     await browser.close();

@@ -40,7 +40,7 @@ const appPageKeys = Object.keys(manifest).filter(
 const is3DChunk = (key, entry) => {
   const file = entry?.file || "";
   return (
-    /three|SmokeProbe|GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|LedgerChain3D/i.test(
+    /three|SmokeProbe|GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|LedgerChain/i.test(
       key + " " + file
     )
   );
@@ -77,7 +77,7 @@ for (const file of jsFiles) {
     .some((k) => [...collectClosure(k)].some((dk) => manifest[dk]?.file === `assets/${file}`));
 
   const looks3d =
-    /three-runtime|SmokeProbe|GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|LedgerChain3D/i.test(
+    /three-runtime|SmokeProbe|GateSequence|ArchitectureFlow|HeroGate|RuleCatalog3D|AttackPath3D|LedgerChain/i.test(
       file
     ) ||
     (!landingStatic && /__webgl_context|WebGLRenderer|OrbitControls|ShapeGeometry/.test(buf.toString("utf8")));

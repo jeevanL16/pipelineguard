@@ -1,7 +1,10 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { InstancedMesh, Matrix4, MeshBasicMaterial } from "three";
+import React, { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useThree } from "@react-three/fiber";
+import { InstancedMesh, Matrix4, MathUtils, MeshBasicMaterial } from "three";
+import { Badge } from "../../ui";
+import { L, Scene3D, UNIT_SHADED_BOX_GEOMETRY, useGatehouseTheme, useInvalidateWhile } from "../core";
 import type { GatehouseColorPalette } from "../core/useGatehouseTheme";
-import { UNIT_SHADED_BOX_GEOMETRY } from "../core/shading";
+import type { Scene3DMode } from "../core/useScene3DMode";
 
 export interface LedgerChainGroupProps {
   colors: GatehouseColorPalette;
@@ -59,7 +62,7 @@ export function LedgerChainGroup({
       inst.setMatrixAt(i, dummyMatrix);
 
       if (isLatest && dropProgress > 0.6) {
-        inst.setColorAt(i, verifiedTone ? colors.pass : colors.primary);
+        inst.setColorAt(i, verifiedTone ? colors.pass : colors.critical);
       } else {
         inst.setColorAt(i, litRatio > 0.35 ? colors.panel : colors.raised);
       }
@@ -76,5 +79,103 @@ export function LedgerChainGroup({
       dispose={null}
       position={[position[0], position[1], position[2]]}
     />
+  );
+}
+
+function ArtifactLedgerCanvas({
+  digest,
+  matched,
+  mode,
+}: {
+  digest: string;
+  matched: boolean;
+  mode: Scene3DMode;
+}) {
+  const gl = useThree((s) => s.gl);
+  const invalidate = useThree((s) => s.invalidate);
+  const { colors, version } = useGatehouseTheme(invalidate);
+  const progressRef = useRef(mode === "static" ? 1 : 0);
+  const [litRatio, setLitRatio] = React.useState(mode === "static" ? 1 : 0);
+
+  useEffect(() => {
+    progressRef.current = mode === "static" ? 1 : 0;
+    setLitRatio(mode === "static" ? 1 : 0);
+    invalidate();
+  }, [digest, matched, mode, colors, version, invalidate]);
+
+  useInvalidateWhile(
+    mode,
+    (dt, isStatic) => {
+      if (isStatic) {
+        if (progressRef.current !== 1) {
+          progressRef.current = 1;
+          setLitRatio(1);
+        }
+        return false;
+      }
+
+      const next = MathUtils.damp(progressRef.current, 1, L.enter, dt);
+      progressRef.current = Math.abs(1 - next) < 0.01 ? 1 : next;
+      setLitRatio(progressRef.current);
+
+      if (typeof window !== "undefined") {
+        (window as unknown as { __PG_3D_STATS?: Record<string, { calls: number; triangles: number }> }).__PG_3D_STATS = {
+          ...(window as unknown as { __PG_3D_STATS?: Record<string, { calls: number; triangles: number }> }).__PG_3D_STATS,
+          ledgerArtifact: {
+            calls: gl.info.render.calls,
+            triangles: gl.info.render.triangles,
+          },
+        };
+      }
+
+      return progressRef.current < 1;
+    },
+    [digest, matched]
+  );
+
+  return (
+    <LedgerChainGroup
+      colors={colors}
+      litRatio={litRatio}
+      position={[0, -6, 0]}
+      verifiedTone={matched}
+    />
+  );
+}
+
+export interface LedgerArtifactScene3DProps {
+  digest: string;
+  matched: boolean;
+  mode: Scene3DMode;
+  fallback: ReactNode;
+}
+
+/** Route-scoped lazy 3D ledger chain for ArtifactsPage driven by the user's real Web Crypto digest. */
+export function LedgerArtifactScene3D({
+  digest,
+  matched,
+  mode,
+  fallback,
+}: LedgerArtifactScene3DProps) {
+  return (
+    <Scene3D
+      id="ledger-artifact"
+      height={140}
+      label={`Artifact digest chain block for ${digest.slice(0, 12)}`}
+      fallback={fallback}
+      overlay={
+        <div className="pointer-events-none absolute inset-x-3 bottom-2.5 flex items-center justify-between">
+          <span className="pg-code-sm text-[var(--pg-text-muted)]">
+            sha256:{digest.slice(0, 12)}
+          </span>
+          <Badge
+            severity={matched ? "PASS" : "CRITICAL"}
+            label={matched ? "Chain locked · Pass" : "Mismatch · Blocked"}
+          />
+        </div>
+      }
+    >
+      <ArtifactLedgerCanvas digest={digest} matched={matched} mode={mode} />
+    </Scene3D>
   );
 }
