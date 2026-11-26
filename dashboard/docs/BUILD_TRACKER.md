@@ -11,8 +11,8 @@
 | 3D Phase 0 — Toolchain, Bundle & Assets | Done | 2026-11-26 | 2026-11-26 | 6d3b8b9 |
 | 3D Phase 1 — GateSequence3D | Done | 2026-11-26 | 2026-11-26 | 336ab60 |
 | 3D Phase 2 — HeroGateScene | Done | 2026-11-26 | 2026-11-26 | bb36b2e |
-| 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
-| 3D Phase 4 — RuleCatalog3D & AttackPath3D | Not started | — | — | — |
+| 3D Phase 3 — ArchitectureFlow3D | Done | 2026-11-26 | 2026-11-26 | 7295ec2 |
+| 3D Phase 4 — RuleCatalog3D & AttackPath3D | Done | 2026-11-26 | 2026-11-26 | pending commit |
 | 3D Phase 5 — DashboardPreview3D (CSS) | Not started | — | — | — |
 | 3D Phase 6 — LedgerChain3D (Artifacts) | Not started | — | — | — |
 | 3D Phase 7 — Verification & Docs | Not started | — | — | — |
@@ -190,6 +190,28 @@
 - **Deviations from spec:** None — all Tier A bundle, draw-call, and accessibility gates passed, unlocking Tier B (Phase 4).
 - **Open questions:** None — proceed to 3D Phase 4 (`RuleCatalog3D` and `AttackPath3D`).
 
+### 3D Phase 4 — `RuleCatalog3D` & `AttackPath3D` (Tier B)
+
+- **Goal:** Ship Tier B interactive 3D scenes cleanly under the 280 KB gzip budget: `RuleCatalog3D` above the catalog table (height proportional to severity weight, non-matching chips damping smoothly to 25% height and muted tone, row hover/focus/click synchronization) and `AttackPath3D` in `IncidentTabsSection` driven by extracted `incidentPaths.ts` with `"Without guard"` / `"With guard"` packet halt toggle at real rule control points.
+- **Files changed:**
+  - `dashboard/src/features/landing/components/{incidentPaths.ts,IncidentTabsSection.tsx,RulesCatalogSection.tsx}`
+  - `dashboard/src/three/scenes/{RuleCatalog3D.tsx,AttackPath3D.tsx,__tests__/phase4Data.test.ts}`
+  - `dashboard/scripts/verifyPhaseScenes.mjs` (added Phase 4 interactive verification for filter-chip damping, block hover -> table row highlight, and `"With guard"` `PG-WF-019 blocked` state).
+- **Commands run (PASS / FAIL):**
+  - `npx tsc --noEmit` -> **PASS** (`TSC=0`)
+  - `npm run lint` -> **PASS** (`LINT=0`)
+  - `npm test` -> **PASS** (`VITEST=0`, 15/15 tests across 5 test files)
+  - `npm run build` + `node scripts\checkManifest3D.mjs` -> **PASS** (`BUILD=0`, `MANIFEST=0`, `isolationPassed: true`)
+  - `node scripts\verifyPhaseScenes.mjs` -> **PASS** (`PHASE_SCENES=0`: `/app*` 0 3D requests, 0 console errors; `ruleCatalog`: 5 draw calls / 402 triangles; `attackPath`: 1 draw call / 108 triangles; `ruleCatalogCritRows: 5`; `ruleCatalogHighlightSync: "true"`; `incidentWithGuardLabel: true`)
+  - `verifyRules.ts` -> **PASS** (`VERIFY_RULES=0`)
+  - `git diff --stat -- backend security` -> **PASS** (empty, `BACKEND_SEC=0`)
+- **Measurements:**
+  - Combined lazy 3D chunks across ALL 5 scenes: **247.97 KiB** gz (`core`: 237.31 KiB, `GateSequence3D`: 2.88 KiB, `ArchitectureFlow3D`: 2.30 KiB, `HeroGateScene`: 2.03 KiB, `RuleCatalog3D`: 1.91 KiB, `AttackPath3D`: 1.54 KiB) — within the 280 KB target.
+  - WebGL telemetry: `heroGate` 5 calls / 227 tris; `gateSequence` 10 calls / 357 tris; `architectureFlow` 4 calls / 648 tris; `ruleCatalog` 5 calls / 402 tris; `attackPath` 1 call / 108 tris.
+  - Landing static closure: `248.36 KiB` gz.
+- **Deviations from spec:** None — Tier B budget and interactive synchronization verified.
+- **Open questions:** None — proceed to 3D Phase 5 (`DashboardPreview3D`).
+
 ## 3. Assumptions
 
 | Assumption / Spec Mismatch | Verification Method | Result |
@@ -214,4 +236,4 @@
 ## 5. Blockers and Next Action
 
 - **Blockers:** None.
-- **Next action:** Commit 3D Phase 3 and proceed to **3D Phase 4 — `RuleCatalog3D` & `AttackPath3D` (Tier B)**.
+- **Next action:** Commit 3D Phase 4 and proceed to **3D Phase 5 — `DashboardPreview3D` (CSS 3D)** (`public/images/preview/*` Playwright light/dark screenshots + `@supports (animation-timeline: view())` perspective layers + flat fallback).

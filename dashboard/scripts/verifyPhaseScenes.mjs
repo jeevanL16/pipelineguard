@@ -165,6 +165,27 @@ async function run() {
       await page.waitForSelector("#architecture canvas", { timeout: 10000 });
       await page.waitForTimeout(250);
 
+      // Phase 4: AttackPath3D & RuleCatalog3D
+      await page.locator("#incidents").scrollIntoViewIfNeeded();
+      await page.waitForSelector("#incidents canvas", { timeout: 10000 });
+      await page.waitForTimeout(500);
+      await page.getByRole("button", { name: "With guard" }).click();
+      await page.waitForTimeout(450);
+      const incidentGuardedText = await page.locator("#incidents").innerText();
+
+      await page.locator("#rules").scrollIntoViewIfNeeded();
+      await page.waitForSelector("#rules canvas", { timeout: 10000 });
+      await page.waitForTimeout(500);
+      await page.locator('#rules [role="group"] button', { hasText: "Critical" }).click();
+      await page.waitForTimeout(300);
+      const critRowsCount = await page.locator("#rules tbody tr").count();
+      // Hover first projected rule chip and verify table row highlights cleanly
+      await page.locator("#rules button").filter({ hasText: /^001$/ }).first().focus();
+      await page.waitForTimeout(150);
+      const rowHighlighted = await page
+        .locator('#rules tbody tr[data-rule-id="PG-WF-001"]')
+        .getAttribute("data-highlighted");
+
       const stats = await page.evaluate(() => (window).__PG_3D_STATS || null);
 
       const rAFCheck = await page.evaluate(() => {
@@ -180,6 +201,9 @@ async function run() {
         archHiddenListWorks: archTextOnFocus.includes("GitHub repository:"),
         archFlatHash: flatHash,
         archFlatCanvasCount: flatCanvasCount,
+        incidentWithGuardLabel: incidentGuardedText.includes("PG-WF-019 blocked"),
+        ruleCatalogCritRows: critRowsCount,
+        ruleCatalogHighlightSync: rowHighlighted,
         stats,
         rAFCheck,
         errors,
@@ -193,13 +217,20 @@ async function run() {
       if (!report.landingWebGL.archHiddenListWorks) {
         throw new Error("Hidden architecture list focus did not drive inspector");
       }
+      if (!report.landingWebGL.incidentWithGuardLabel || rowHighlighted !== "true") {
+        throw new Error("Phase 4 interactive assertions failed: " + JSON.stringify(report.landingWebGL));
+      }
       if (
         !stats?.gateSequence ||
         stats.gateSequence.calls > 12 ||
         !stats?.heroGate ||
         stats.heroGate.calls > 12 ||
         !stats?.architectureFlow ||
-        stats.architectureFlow.calls > 12
+        stats.architectureFlow.calls > 12 ||
+        !stats?.attackPath ||
+        stats.attackPath.calls > 12 ||
+        !stats?.ruleCatalog ||
+        stats.ruleCatalog.calls > 12
       ) {
         throw new Error("Draw-call budget exceeded: " + JSON.stringify(stats));
       }
